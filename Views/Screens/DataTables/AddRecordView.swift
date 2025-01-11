@@ -136,7 +136,7 @@ struct FieldInputView: View {
                 get: { value == "true" },
                 set: { value = $0 ? "true" : "false" }
             )) {
-                Text("是/否")
+                Text("布尔")
             }
             
         // TODO: 实现其他类型的输入控件

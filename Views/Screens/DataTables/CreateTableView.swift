@@ -9,6 +9,8 @@ struct CreateTableView: View {
     @State private var tableDescription = ""
     @State private var fields: [DataField] = []
     @State private var showAllFields = false
+    @State private var editingFieldIndex: Int?
+    @State private var editingFieldName: String = ""
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
@@ -71,6 +73,10 @@ struct CreateTableView: View {
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(mainColor)
                                 
+                                Text("点击字段名称可编辑")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.secondary)
+                                
                                 Spacer()
                                 
                                 Button(action: { 
@@ -101,20 +107,34 @@ struct CreateTableView: View {
                                 }
                                 .padding(.vertical, 20)
                             } else {
-                                ForEach(fields) { field in
+                                ForEach(fields.indices, id: \.self) { index in
                                     HStack {
-                                        Image(systemName: field.type.icon)
-                                            .foregroundColor(field.type.isPro ? .gray : accentColor)
+                                        Image(systemName: fields[index].type.icon)
+                                            .foregroundColor(fields[index].type.isPro ? .gray : accentColor)
                                             .frame(width: 24)
-                                        Text(field.name)
-                                            .foregroundColor(mainColor)
+                                        
+                                        if editingFieldIndex == index {
+                                            TextField("字段名称", text: $editingFieldName)
+                                                .textFieldStyle(.plain)
+                                                .onSubmit {
+                                                    fields[index].name = editingFieldName
+                                                    editingFieldIndex = nil
+                                                }
+                                                .onAppear {
+                                                    editingFieldName = fields[index].name
+                                                }
+                                        } else {
+                                            Text(fields[index].name)
+                                                .foregroundColor(mainColor)
+                                                .onTapGesture {
+                                                    editingFieldIndex = index
+                                                }
+                                        }
                                         
                                         Spacer()
                                         
                                         Button(action: {
-                                            if let index = fields.firstIndex(where: { $0.id == field.id }) {
-                                                fields.remove(at: index)
-                                            }
+                                            fields.remove(at: index)
                                         }) {
                                             Image(systemName: "xmark.circle.fill")
                                                 .foregroundColor(.gray.opacity(0.5))
@@ -204,7 +224,8 @@ struct CreateTableView: View {
     }
     
     private func addField(type: DataField.FieldType) {
-        let field = DataField(name: type.rawValue, type: type)
+        let defaultName = type.rawValue
+        let field = DataField(name: defaultName, type: type)
         fields.append(field)
     }
     
