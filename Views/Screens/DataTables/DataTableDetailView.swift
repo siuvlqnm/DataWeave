@@ -158,6 +158,9 @@ struct DataTableDetailView: View {
         }
         .navigationTitle(table.name)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showAddRecord) {
+            AddRecordView(table: table)
+        }
     }
 }
 

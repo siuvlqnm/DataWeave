@@ -102,7 +102,7 @@ struct DataTableCards: View {
     }
     
     var body: some View {
-        NavigationLink(destination: Text("数据表详情页面")) {
+        NavigationLink(destination: DataTableDetailView(table: table)) {
             VStack(alignment: .leading, spacing: 12) {
                 // 标题行
                 HStack {
