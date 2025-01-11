@@ -42,7 +42,7 @@ class DataField {
         case richText = "富文本"
         case number = "数字"
         case decimal = "小数"
-        case boolean = "是/否"
+        case boolean = "布尔"
         case date = "日期"
         case time = "时间"
         case dateTime = "日期时间"

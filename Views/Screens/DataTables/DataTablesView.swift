@@ -144,5 +144,15 @@ struct DataTableCards: View {
 }
 
 #Preview {
-    DataTablesView()
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: DataTable.self, configurations: config)
+    
+    // Add sample data
+    let sampleTable = DataTable(name: "测试数据表", description: "这是一个测试数据表")
+    container.mainContext.insert(sampleTable)
+    
+    return DataTablesView()
+        .modelContainer(container)
+
+    // DataTablesView()
 }
