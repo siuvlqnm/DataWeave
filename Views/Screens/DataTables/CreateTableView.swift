@@ -73,7 +73,11 @@ struct CreateTableView: View {
                                 
                                 Spacer()
                                 
-                                Button(action: { showAllFields.toggle() }) {
+                                Button(action: { 
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        showAllFields.toggle()
+                                    }
+                                }) {
                                     HStack(spacing: 4) {
                                         Image(systemName: "plus.circle.fill")
                                         Text("添加字段")
@@ -171,6 +175,7 @@ struct CreateTableView: View {
                                 .background(Color.white)
                                 .cornerRadius(16)
                                 .shadow(color: Color.black.opacity(0.05), radius: 10)
+                                .transition(.move(edge: .top).combined(with: .opacity))
                             }
                         }
                     }
