@@ -3,23 +3,27 @@ import SwiftData
 
 struct DataTableDetailView: View {
     let table: DataTable
-    
+
     @Environment(\.modelContext) private var modelContext
     @State private var showAddRecord = false
     @State private var searchText = ""
-    @Query private var records: [DataRecord]
-    
+
+    @Query(sort: [SortDescriptor(\DataRecord.createdAt)]) var records: [DataRecord] // 修改了 sort 的写法
+
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
     private let backgroundColor = Color(hex: "FAF0E6")
-    
+
     init(table: DataTable) {
         self.table = table
         print("Initializing DataTableDetailView for table: \(table.name), ID: \(String(describing: table.id))")
-        
-        // _records = Query(filter: #Predicate<DataRecord> { record in
-        //     record.table?.persistentModelID == table.persistentModelID
-        // }, animation: .default)
+
+        // 捕获 table.id 的值
+        let tableId = table.id
+
+        _records = Query(filter: #Predicate<DataRecord> { record in
+            record.table?.id == tableId
+        }, sort: [SortDescriptor(\DataRecord.createdAt)]) // 显式使用 SortDescriptor
     }
     
     private struct InfoRow: View {
