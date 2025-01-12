@@ -3,7 +3,7 @@ import SwiftData
 
 @Model
 class DataTable {
-    var id: String
+    var id: UUID
     var name: String
     var tableDescription: String?
     var fields: [DataField]
@@ -11,7 +11,7 @@ class DataTable {
     var updatedAt: Date
     
     init(name: String, description: String? = nil) {
-        self.id = UUID().uuidString
+        self.id = UUID()
         self.name = name
         self.tableDescription = description
         self.fields = []
@@ -22,14 +22,14 @@ class DataTable {
 
 @Model
 class DataField {
-    var id: String
+    @Attribute(.unique) var id: UUID
     var name: String
     var type: FieldType
     var isRequired: Bool
     var defaultValue: String?
     
     init(name: String, type: FieldType, isRequired: Bool = false, defaultValue: String? = nil) {
-        self.id = UUID().uuidString
+        self.id = UUID()
         self.name = name
         self.type = type
         self.isRequired = isRequired

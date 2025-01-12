@@ -7,7 +7,7 @@ struct AddRecordView: View {
     
     let table: DataTable
     @State private var record: DataRecord
-    @State private var fieldValues: [String: String] = [:]
+    @State private var fieldValues: [UUID: String] = [:]
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")

@@ -3,14 +3,14 @@ import SwiftData
 
 @Model
 final class DataRecord {
-    @Attribute(.unique) var id: String
-    var values: [String: String] // 存储字段值，key 是字段 id
+    @Attribute(.unique) var id: UUID
+    var values: [UUID: String] // 存储字段值，key 是字段 id
     var createdAt: Date
     var updatedAt: Date
     var table: DataTable? // 关联的数据表
     
     init(table: DataTable) {
-        self.id = UUID().uuidString
+        self.id = UUID()
         self.values = [:]
         self.createdAt = Date()
         self.updatedAt = Date()
