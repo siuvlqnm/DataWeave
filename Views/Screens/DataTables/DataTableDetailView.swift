@@ -18,13 +18,8 @@ struct DataTableDetailView: View {
         print("Initializing DataTableDetailView for table: \(table.name), ID: \(String(describing: table.id))")
         
         // _records = Query(filter: #Predicate<DataRecord> { record in
-        //     guard let tableId = record.table?.id else {
-        //         print("Record has no table or table has no ID")
-        //         return false
-        //     }
-        //     print("Comparing record.table.id: \(tableId) with table.id: \(String(describing: table.id))")
-        //     return tableId == table.id
-        // })
+        //     record.table?.persistentModelID == table.persistentModelID
+        // }, animation: .default)
     }
     
     private struct InfoRow: View {

@@ -6,7 +6,6 @@ struct AddRecordView: View {
     @Environment(\.dismiss) private var dismiss
     
     let table: DataTable
-    @State private var record: DataRecord
     @State private var fieldValues: [UUID: String] = [:]
     
     private let mainColor = Color(hex: "1A202C")
@@ -15,7 +14,6 @@ struct AddRecordView: View {
     
     init(table: DataTable) {
         self.table = table
-        _record = State(initialValue: DataRecord(table: table))
     }
     
     var body: some View {
@@ -89,6 +87,9 @@ struct AddRecordView: View {
     }
     
     private func saveRecord() {
+        // 创建新记录
+        let record = DataRecord(table: table)
+        
         // 保存所有字段值
         for field in table.fields {
             if let value = fieldValues[field.id] {
