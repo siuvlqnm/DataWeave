@@ -11,9 +11,15 @@ import SwiftData
 @main
 struct DataWeaveApp: App {
     let container: ModelContainer = {
-        let schema = Schema([DataTable.self])
-        let container = try! ModelContainer(for: schema)
-        return container
+        let schema = Schema([DataTable.self, DataRecord.self, DataField.self])
+        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        
+        do {
+            let container = try ModelContainer(for: schema, configurations: modelConfiguration)
+            return container
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
     }()
     
     var body: some Scene {
