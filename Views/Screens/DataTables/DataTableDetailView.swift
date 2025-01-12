@@ -7,10 +7,25 @@ struct DataTableDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showAddRecord = false
     @State private var searchText = ""
+    @Query private var records: [DataRecord]
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
     private let backgroundColor = Color(hex: "FAF0E6")
+    
+    init(table: DataTable) {
+        self.table = table
+        print("Initializing DataTableDetailView for table: \(table.name), ID: \(String(describing: table.id))")
+        
+        // _records = Query(filter: #Predicate<DataRecord> { record in
+        //     guard let tableId = record.table?.id else {
+        //         print("Record has no table or table has no ID")
+        //         return false
+        //     }
+        //     print("Comparing record.table.id: \(tableId) with table.id: \(String(describing: table.id))")
+        //     return tableId == table.id
+        // })
+    }
     
     private struct InfoRow: View {
         let icon: String
@@ -31,6 +46,58 @@ struct DataTableDetailView: View {
             }
             .font(.system(size: 14))
         }
+    }
+    
+    private struct RecordRow: View {
+        let record: DataRecord
+        
+        var body: some View {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Record ID: \(record.id)")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                
+                ForEach(record.values.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
+                    HStack(spacing: 8) {
+                        Text(String(describing: key))
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 12))
+                            .frame(width: 80, alignment: .leading)
+                        
+                        Text(value)
+                            .font(.system(size: 14))
+                            .foregroundColor(.primary)
+                    }
+                }
+                
+                HStack {
+                    Spacer()
+                    Text("Created: \(record.createdAt.formatted(.relative(presentation: .named)))")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding()
+            .background(Color.gray.opacity(0.05))
+            .cornerRadius(8)
+            .onAppear {
+                print("Displaying record: \(record.id), Table: \(record.table?.name ?? "nil")")
+            }
+        }
+    }
+    
+    private var filteredRecords: [DataRecord] {
+        print("Total records count: \(records.count)")
+        
+        if searchText.isEmpty {
+            return records
+        }
+        
+        let filtered = records.filter { record in
+            record.values.contains { $0.value.localizedCaseInsensitiveContains(searchText) }
+        }
+        print("Filtered records count: \(filtered.count)")
+        return filtered
     }
     
     var body: some View {
@@ -68,56 +135,6 @@ struct DataTableDetailView: View {
                     )
                     .padding(.horizontal, 16)
                     
-                    // 字段列表卡片
-                    // VStack(alignment: .leading, spacing: 16) {
-                    //     HStack(spacing: 8) {
-                    //         Image(systemName: "list.bullet.rectangle.fill")
-                    //             .foregroundColor(accentColor)
-                    //         Text("字段列表")
-                    //             .font(.headline)
-                    //             .foregroundColor(mainColor)
-                    //     }
-                        
-                    //     ForEach(table.fields) { field in
-                    //         HStack {
-                    //             Image(systemName: field.type.icon)
-                    //                 .foregroundColor(field.type.isPro ? .gray : accentColor)
-                    //                 .frame(width: 24)
-                                
-                    //             VStack(alignment: .leading) {
-                    //                 Text(field.name)
-                    //                     .foregroundColor(mainColor)
-                    //                 Text(field.type.rawValue)
-                    //                     .font(.caption)
-                    //                     .foregroundColor(.secondary)
-                    //             }
-                                
-                    //             Spacer()
-                                
-                    //             if field.isRequired {
-                    //                 Text("必填")
-                    //                     .font(.caption)
-                    //                     .padding(.horizontal, 8)
-                    //                     .padding(.vertical, 2)
-                    //                     .background(Color.red.opacity(0.1))
-                    //                     .foregroundColor(.red)
-                    //                     .cornerRadius(4)
-                    //             }
-                    //         }
-                    //         .padding()
-                    //         .background(Color.gray.opacity(0.05))
-                    //         .cornerRadius(8)
-                    //     }
-                    // }
-                    // .padding(16)
-                    // .frame(maxWidth: .infinity, alignment: .leading)
-                    // .background(
-                    //     RoundedRectangle(cornerRadius: 16)
-                    //         .fill(Color.white)
-                    //         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
-                    // )
-                    // .padding(.horizontal, 16)
-                    
                     // 数据记录卡片
                     VStack(alignment: .leading, spacing: 12) {
                         HStack {
@@ -141,12 +158,24 @@ struct DataTableDetailView: View {
                             }
                         }
                         
-                        // TODO: 实现数据记录列表
-                        Text("暂无数据")
-                            .font(.system(size: 14))
-                            .foregroundColor(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .padding(.vertical, 40)
+                        TextField("搜索记录...", text: $searchText)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .padding(.vertical, 8)
+                        
+                        if records.isEmpty {
+                            Text("暂无数据")
+                                .font(.system(size: 14))
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.vertical, 40)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filteredRecords) { record in
+                                    RecordRow(record: record)
+                                        .transition(.opacity)
+                                }
+                            }
+                        }
                     }
                     .padding()
                     .background(Color.white)
