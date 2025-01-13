@@ -1,6 +1,113 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - Field Row View
+struct FieldRowView: View {
+    let index: Int
+    let field: DataField
+    let mainColor: Color
+    let accentColor: Color
+    let isDragging: Bool
+    let editingFieldIndex: Int?
+    @Binding var editingFieldName: String
+    var onEdit: (Int) -> Void
+    var onDelete: () -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "line.3.horizontal")
+                .foregroundColor(.gray)
+                .frame(width: 24)
+            
+            Image(systemName: field.type.icon)
+                .foregroundColor(field.type.isPro ? .gray : accentColor)
+                .frame(width: 24)
+            
+            if editingFieldIndex == index {
+                TextField("字段名称", text: $editingFieldName)
+                    .textFieldStyle(.plain)
+                    .onSubmit {
+                        onEdit(index)
+                    }
+                    .onAppear {
+                        editingFieldName = field.name
+                    }
+            } else {
+                Text(field.name)
+                    .foregroundColor(mainColor)
+                    .onTapGesture {
+                        onEdit(index)
+                    }
+            }
+            
+            Spacer()
+            
+            Button(action: onDelete) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.gray.opacity(0.5))
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.gray.opacity(isDragging ? 0.1 : 0.05))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.gray.opacity(0.1), lineWidth: isDragging ? 2 : 0)
+        )
+    }
+}
+
+// MARK: - Field Type Grid View
+struct FieldTypeGridView: View {
+    let group: (String, [DataField.FieldType])
+    let mainColor: Color
+    let accentColor: Color
+    var onSelect: (DataField.FieldType) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(group.0)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(mainColor)
+            
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 12) {
+                ForEach(group.1, id: \.self) { type in
+                    Button(action: { onSelect(type) }) {
+                        HStack {
+                            Image(systemName: type.icon)
+                                .foregroundColor(type.isPro ? .gray : accentColor)
+                            Text(type.rawValue)
+                                .foregroundColor(type.isPro ? .gray : mainColor)
+                            Spacer()
+                            if type.isPro {
+                                Text("PRO")
+                                    .font(.caption)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.gray.opacity(0.1))
+                                    .cornerRadius(4)
+                            }
+                        }
+                        .padding()
+                        .background(Color.gray.opacity(0.05))
+                        .cornerRadius(8)
+                    }
+                    .disabled(type.isPro)
+                }
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 10)
+    }
+}
+
 struct CreateTableView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -11,6 +118,7 @@ struct CreateTableView: View {
     @State private var showAllFields = false
     @State private var editingFieldIndex: Int?
     @State private var editingFieldName: String = ""
+    @State private var draggedItem: DataField?
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
@@ -108,44 +216,49 @@ struct CreateTableView: View {
                                 .padding(.vertical, 20)
                             } else {
                                 ForEach(fields.indices, id: \.self) { index in
-                                    HStack {
-                                        Image(systemName: fields[index].type.icon)
-                                            .foregroundColor(fields[index].type.isPro ? .gray : accentColor)
-                                            .frame(width: 24)
-                                        
-                                        if editingFieldIndex == index {
-                                            TextField("字段名称", text: $editingFieldName)
-                                                .textFieldStyle(.plain)
-                                                .onSubmit {
-                                                    fields[index].name = editingFieldName
-                                                    editingFieldIndex = nil
-                                                }
-                                                .onAppear {
-                                                    editingFieldName = fields[index].name
-                                                }
-                                        } else {
-                                            Text(fields[index].name)
-                                                .foregroundColor(mainColor)
-                                                .onTapGesture {
-                                                    editingFieldIndex = index
-                                                }
-                                        }
-                                        
-                                        Spacer()
-                                        
-                                        Button(action: {
+                                    FieldRowView(
+                                        index: index,
+                                        field: fields[index],
+                                        mainColor: mainColor,
+                                        accentColor: accentColor,
+                                        isDragging: draggedItem?.id == fields[index].id,
+                                        editingFieldIndex: editingFieldIndex,
+                                        editingFieldName: $editingFieldName,
+                                        onEdit: { idx in
+                                            if editingFieldIndex == idx {
+                                                fields[idx].name = editingFieldName
+                                                editingFieldIndex = nil
+                                            } else {
+                                                editingFieldIndex = idx
+                                            }
+                                        },
+                                        onDelete: {
                                             fields.remove(at: index)
-                                        }) {
-                                            Image(systemName: "xmark.circle.fill")
-                                                .foregroundColor(.gray.opacity(0.5))
                                         }
-                                    }
-                                    .padding()
-                                    .background(Color.gray.opacity(0.05))
-                                    .cornerRadius(8)
-                                }
-                                .onMove { from, to in
-                                    fields.move(fromOffsets: from, toOffset: to)
+                                    )
+                                    .gesture(
+                                        DragGesture()
+                                            .onChanged { value in
+                                                if draggedItem == nil {
+                                                    draggedItem = fields[index]
+                                                }
+                                                guard let draggedItem = draggedItem else { return }
+                                                
+                                                let draggedIndex = Int((value.location.y / 60).rounded())
+                                                let validIndex = max(0, min(draggedIndex, fields.count - 1))
+                                                
+                                                if validIndex != index {
+                                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                                        let fromIndex = fields.firstIndex(where: { $0.id == draggedItem.id }) ?? index
+                                                        fields.remove(at: fromIndex)
+                                                        fields.insert(draggedItem, at: validIndex)
+                                                    }
+                                                }
+                                            }
+                                            .onEnded { _ in
+                                                draggedItem = nil
+                                            }
+                                    )
                                 }
                             }
                         }
@@ -157,45 +270,14 @@ struct CreateTableView: View {
                         // 字段选择面板
                         if showAllFields {
                             ForEach(fieldGroups, id: \.0) { group in
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text(group.0)
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(mainColor)
-                                    
-                                    LazyVGrid(columns: [
-                                        GridItem(.flexible()),
-                                        GridItem(.flexible())
-                                    ], spacing: 12) {
-                                        ForEach(group.1, id: \.self) { type in
-                                            Button(action: { addField(type: type) }) {
-                                                HStack {
-                                                    Image(systemName: type.icon)
-                                                        .foregroundColor(type.isPro ? .gray : accentColor)
-                                                    Text(type.rawValue)
-                                                        .foregroundColor(type.isPro ? .gray : mainColor)
-                                                    Spacer()
-                                                    if type.isPro {
-                                                        Text("PRO")
-                                                            .font(.caption)
-                                                            .padding(.horizontal, 6)
-                                                            .padding(.vertical, 2)
-                                                            .background(Color.gray.opacity(0.1))
-                                                            .cornerRadius(4)
-                                                    }
-                                                }
-                                                .padding()
-                                                .background(Color.gray.opacity(0.05))
-                                                .cornerRadius(8)
-                                            }
-                                            .disabled(type.isPro)
-                                        }
+                                FieldTypeGridView(
+                                    group: group,
+                                    mainColor: mainColor,
+                                    accentColor: accentColor,
+                                    onSelect: { type in
+                                        addField(type: type)
                                     }
-                                }
-                                .padding()
-                                .background(Color.white)
-                                .cornerRadius(16)
-                                .shadow(color: Color.black.opacity(0.05), radius: 10)
-                                .transition(.move(edge: .top).combined(with: .opacity))
+                                )
                             }
                         }
                     }
