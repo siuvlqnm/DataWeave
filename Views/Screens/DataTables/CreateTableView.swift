@@ -20,7 +20,7 @@ struct CreateTableView: View {
     private let fieldGroups: [(String, [DataField.FieldType])] = [
         ("基础类型", [.text, .richText, .number, .decimal, .boolean]),
         ("日期时间", [.date, .time, .dateTime]),
-        ("选择类型", [.select, .multiSelect]),
+        // ("选择类型", [.select, .multiSelect]),
         ("媒体类型", [.image, .file]),
         ("联系信息", [.email, .phone, .url]),
         ("高级类型", [.location, .color, .barcode, .qrCode])

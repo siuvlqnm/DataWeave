@@ -52,8 +52,8 @@ class DataField {
         case image = "图片"
         case file = "文件"
         // 选择类型
-        case select = "单选"
-        case multiSelect = "多选"
+        // case select = "单选"
+        // case multiSelect = "多选"
         // 联系信息
         case email = "邮箱"
         case phone = "电话"
@@ -75,8 +75,8 @@ class DataField {
             case .dateTime: return "calendar.badge.clock"
             case .image: return "photo"
             case .file: return "doc"
-            case .select: return "list.bullet"
-            case .multiSelect: return "list.bullet.indent"
+            // case .select: return "list.bullet"
+            // case .multiSelect: return "list.bullet.indent"
             case .email: return "envelope"
             case .phone: return "phone"
             case .url: return "link"
@@ -91,8 +91,7 @@ class DataField {
             switch self {
             case .text, .richText, .number, .decimal,
                  .boolean, .date, .time, .dateTime,
-                 .image, .file, .select, .multiSelect,
-                 .email, .phone, .url:
+                 .image, .file, .email, .phone, .url:
                 return false
             default:
                 return true
