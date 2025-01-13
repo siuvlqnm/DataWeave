@@ -8,11 +8,12 @@ struct FieldRowView: View {
     let mainColor: Color
     let accentColor: Color
     let isDragging: Bool
-    let editingFieldIndex: Int?
+    @Binding var editingFieldIndex: Int?  // 改为 Binding
     @Binding var editingFieldName: String
     var onEdit: (Int) -> Void
     var onDelete: () -> Void
     let isTarget: Bool  // 标记是否为拖拽目标位置
+    @FocusState private var isFieldFocused: Bool
     
     var body: some View {
         HStack {
@@ -28,17 +29,24 @@ struct FieldRowView: View {
             if editingFieldIndex == index {
                 TextField("字段名称", text: $editingFieldName)
                     .textFieldStyle(.plain)
-                    .onSubmit {
+                    .focused($isFieldFocused)
+                    .onChange(of: isFieldFocused) { newValue in
+                        if !newValue {  // 失去焦点时保存
+                            onEdit(index)
+                        }
+                    }
+                    .onSubmit {  // 按回车键时保存
                         onEdit(index)
                     }
                     .onAppear {
-                        editingFieldName = field.name
+                        isFieldFocused = true
                     }
             } else {
                 Text(field.name)
                     .foregroundColor(mainColor)
                     .onTapGesture {
-                        onEdit(index)
+                        editingFieldIndex = index
+                        editingFieldName = field.name
                     }
             }
             
@@ -117,13 +125,13 @@ struct DraggableFieldsList: View {
     @Binding var fields: [DataField]
     let mainColor: Color
     let accentColor: Color
-    @Binding var editingFieldIndex: Int?
-    @Binding var editingFieldName: String
     @State private var draggedItem: DataField?
     @State private var dropIndex: Int?
+    @Binding var editingFieldIndex: Int?  // 改为 Binding
+    @Binding var editingFieldName: String
     
     var body: some View {
-        LazyVStack(spacing: 0) {
+        LazyVStack(spacing: 12) { // 添加间距
             ForEach(Array(fields.enumerated()), id: \.element.id) { index, field in
                 FieldRowView(
                     index: index,
@@ -131,15 +139,25 @@ struct DraggableFieldsList: View {
                     mainColor: mainColor,
                     accentColor: accentColor,
                     isDragging: draggedItem?.id == field.id,
-                    editingFieldIndex: editingFieldIndex,
+                    editingFieldIndex: $editingFieldIndex,
                     editingFieldName: $editingFieldName,
                     onEdit: { handleEdit(index: $0) },
                     onDelete: { handleDelete(at: index) },
                     isTarget: dropIndex == index
                 )
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.white)
+                .cornerRadius(8)
+                .onTapGesture {
+                    startEditing(index: index)
+                }
                 .onDrag {
-                    self.draggedItem = field
-                    return NSItemProvider(object: "\(index)" as NSString)
+                    if editingFieldIndex == nil {  // 编辑时禁用拖拽
+                        self.draggedItem = field
+                        return NSItemProvider(object: "\(index)" as NSString)
+                    }
+                    return NSItemProvider()
                 }
                 .onDrop(
                     of: [.text],
@@ -152,11 +170,16 @@ struct DraggableFieldsList: View {
                 )
             }
         }
+        .padding(.vertical, 8)
+    }
+    
+    private func startEditing(index: Int) {
+        editingFieldIndex = index
+        editingFieldName = fields[index].name
     }
     
     private func handleEdit(index: Int) {
-        // 编辑处理逻辑
-        if !editingFieldName.isEmpty {
+        if (!editingFieldName.isEmpty) {
             fields[index].name = editingFieldName
         }
         editingFieldIndex = nil
@@ -249,7 +272,11 @@ struct CreateTableView: View {
                                 Spacer()
                                 
                                 Button(action: { 
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    withAnimation(.spring(
+                                        response: 0.4,     // 调整响应时间
+                                        dampingFraction: 0.8,  // 弹性阻尼
+                                        blendDuration: 0.2    // 混合持续时间
+                                    )) {
                                         showAllFields.toggle()
                                     }
                                 }) {
@@ -300,6 +327,22 @@ struct CreateTableView: View {
                                     onSelect: { type in
                                         addField(type: type)
                                     }
+                                )
+                                .transition(
+                                    .asymmetric(
+                                        insertion: .scale(scale: 0.95).combined(with: .opacity)
+                                            .animation(.spring(
+                                                response: 0.4,
+                                                dampingFraction: 0.8,
+                                                blendDuration: 0.2
+                                            )),
+                                        removal: .scale(scale: 0.95).combined(with: .opacity)
+                                            .animation(.spring(
+                                                response: 0.3,
+                                                dampingFraction: 1,
+                                                blendDuration: 0.1
+                                            ))
+                                    )
                                 )
                             }
                         }
