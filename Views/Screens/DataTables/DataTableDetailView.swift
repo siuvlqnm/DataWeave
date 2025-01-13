@@ -56,9 +56,9 @@ struct DataTableDetailView: View {
                     .font(.caption2)
                     .foregroundColor(.secondary)
                 
-                ForEach(record.values.sorted(by: { $0.key < $1.key }), id: \.key) { key, value in
+                ForEach(record.values.sorted(by: { $0.key < $1.key }), id: \.key) { fieldId, value in
                     HStack(spacing: 8) {
-                        Text(String(describing: key))
+                        Text(record.table?.fields.first(where: { $0.id == fieldId })?.name ?? "未知字段")
                             .foregroundColor(.secondary)
                             .font(.system(size: 12))
                             .frame(width: 80, alignment: .leading)
