@@ -12,12 +12,14 @@ struct FieldRowView: View {
     @Binding var editingFieldName: String
     var onEdit: (Int) -> Void
     var onDelete: () -> Void
+    let isTarget: Bool  // 标记是否为拖拽目标位置
     
     var body: some View {
         HStack {
             Image(systemName: "line.3.horizontal")
                 .foregroundColor(.gray)
                 .frame(width: 24)
+                .opacity(isDragging ? 0.5 : 1) // 拖拽时降低原位置透明度
             
             Image(systemName: field.type.icon)
                 .foregroundColor(field.type.isPro ? .gray : accentColor)
@@ -56,6 +58,8 @@ struct FieldRowView: View {
             RoundedRectangle(cornerRadius: 8)
                 .stroke(Color.gray.opacity(0.1), lineWidth: isDragging ? 2 : 0)
         )
+        .offset(y: isTarget ? 6 : 0) // 目标位置显示一个小位移
+        .animation(.easeInOut(duration: 0.2), value: isTarget) // 添加动画
     }
 }
 
@@ -108,6 +112,62 @@ struct FieldTypeGridView: View {
     }
 }
 
+// 1. 添加可拖拽列表组件
+struct DraggableFieldsList: View {
+    @Binding var fields: [DataField]
+    let mainColor: Color
+    let accentColor: Color
+    @Binding var editingFieldIndex: Int?
+    @Binding var editingFieldName: String
+    @State private var draggedItem: DataField?
+    @State private var dropIndex: Int?
+    
+    var body: some View {
+        LazyVStack(spacing: 0) {
+            ForEach(Array(fields.enumerated()), id: \.element.id) { index, field in
+                FieldRowView(
+                    index: index,
+                    field: field,
+                    mainColor: mainColor,
+                    accentColor: accentColor,
+                    isDragging: draggedItem?.id == field.id,
+                    editingFieldIndex: editingFieldIndex,
+                    editingFieldName: $editingFieldName,
+                    onEdit: { handleEdit(index: $0) },
+                    onDelete: { handleDelete(at: index) },
+                    isTarget: dropIndex == index
+                )
+                .onDrag {
+                    self.draggedItem = field
+                    return NSItemProvider(object: "\(index)" as NSString)
+                }
+                .onDrop(
+                    of: [.text],
+                    delegate: CustomDropDelegate(
+                        item: field,
+                        items: $fields,
+                        draggedItem: $draggedItem,
+                        dropIndex: $dropIndex
+                    )
+                )
+            }
+        }
+    }
+    
+    private func handleEdit(index: Int) {
+        // 编辑处理逻辑
+        if !editingFieldName.isEmpty {
+            fields[index].name = editingFieldName
+        }
+        editingFieldIndex = nil
+        editingFieldName = ""
+    }
+    
+    private func handleDelete(at index: Int) {
+        fields.remove(at: index)
+    }
+}
+
 struct CreateTableView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -119,6 +179,7 @@ struct CreateTableView: View {
     @State private var editingFieldIndex: Int?
     @State private var editingFieldName: String = ""
     @State private var draggedItem: DataField?
+    @State private var dropIndex: Int?
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
@@ -215,51 +276,13 @@ struct CreateTableView: View {
                                 }
                                 .padding(.vertical, 20)
                             } else {
-                                ForEach(fields.indices, id: \.self) { index in
-                                    FieldRowView(
-                                        index: index,
-                                        field: fields[index],
-                                        mainColor: mainColor,
-                                        accentColor: accentColor,
-                                        isDragging: draggedItem?.id == fields[index].id,
-                                        editingFieldIndex: editingFieldIndex,
-                                        editingFieldName: $editingFieldName,
-                                        onEdit: { idx in
-                                            if editingFieldIndex == idx {
-                                                fields[idx].name = editingFieldName
-                                                editingFieldIndex = nil
-                                            } else {
-                                                editingFieldIndex = idx
-                                            }
-                                        },
-                                        onDelete: {
-                                            fields.remove(at: index)
-                                        }
-                                    )
-                                    .gesture(
-                                        DragGesture()
-                                            .onChanged { value in
-                                                if draggedItem == nil {
-                                                    draggedItem = fields[index]
-                                                }
-                                                guard let draggedItem = draggedItem else { return }
-                                                
-                                                let draggedIndex = Int((value.location.y / 60).rounded())
-                                                let validIndex = max(0, min(draggedIndex, fields.count - 1))
-                                                
-                                                if validIndex != index {
-                                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                                        let fromIndex = fields.firstIndex(where: { $0.id == draggedItem.id }) ?? index
-                                                        fields.remove(at: fromIndex)
-                                                        fields.insert(draggedItem, at: validIndex)
-                                                    }
-                                                }
-                                            }
-                                            .onEnded { _ in
-                                                draggedItem = nil
-                                            }
-                                    )
-                                }
+                                DraggableFieldsList(
+                                    fields: $fields,
+                                    mainColor: mainColor,
+                                    accentColor: accentColor,
+                                    editingFieldIndex: $editingFieldIndex,
+                                    editingFieldName: $editingFieldName
+                                )
                             }
                         }
                         .padding()
@@ -320,6 +343,49 @@ struct CreateTableView: View {
     }
 }
 
+// 添加 CustomDropDelegate 实现
+struct CustomDropDelegate: DropDelegate {
+    let item: DataField
+    @Binding var items: [DataField]
+    @Binding var draggedItem: DataField?
+    @Binding var dropIndex: Int?
+    
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem = draggedItem else { return }
+        guard let fromIndex = items.firstIndex(where: { $0.id == draggedItem.id }),
+              let toIndex = items.firstIndex(where: { $0.id == item.id })
+        else { return }
+        
+        dropIndex = toIndex
+    }
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
+    }
+    
+    func performDrop(info: DropInfo) -> Bool {
+        dropIndex = nil
+        guard let draggedItem = draggedItem else { return false }
+        guard let fromIndex = items.firstIndex(where: { $0.id == draggedItem.id }),
+              let toIndex = items.firstIndex(where: { $0.id == item.id })
+        else { return false }
+        
+        withAnimation {
+            if fromIndex != toIndex {
+                items.move(fromOffsets: IndexSet(integer: fromIndex),
+                          toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+            }
+        }
+        
+        self.draggedItem = nil
+        return true
+    }
+    
+    func dropExited(info: DropInfo) {
+        dropIndex = nil
+    }
+}
+
 #Preview {
     CreateTableView()
-} 
+}
