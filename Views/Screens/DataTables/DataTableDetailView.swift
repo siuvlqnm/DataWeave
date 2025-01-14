@@ -182,7 +182,8 @@ struct DataTableDetailView: View {
                                     NavigationLink(destination: RecordDetailView(record: record)) {
                                         RecordRow(record: record)
                                     }
-                                    .buttonStyle(ScaleButtonStyle())
+                                    .buttonStyle(.plain)
+                                    .transition(.opacity.combined(with: .move(edge: .trailing)))
                                 }
                             }
                             .background(Color.white)
