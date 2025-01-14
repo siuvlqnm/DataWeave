@@ -51,36 +51,45 @@ struct DataTableDetailView: View {
         let record: DataRecord
         
         var body: some View {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Record ID: \(record.id)")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                
-                ForEach(record.values.sorted(by: { $0.key < $1.key }), id: \.key) { fieldId, value in
+            VStack(spacing: 0) {
+                HStack(spacing: 16) {
+                    // 左侧主要内容
+                    if let firstField = record.table?.fields.sorted(by: { $0.sortIndex < $1.sortIndex }).first,
+                       let value = record.values[firstField.id] {
+                        VStack(alignment: .leading, spacing: 4) {
+                            // 字段名称
+                            Text(firstField.name)
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                            
+                            // 字段值
+                            Text(value)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    // 右侧时间和箭头
                     HStack(spacing: 8) {
-                        Text(record.table?.fields.first(where: { $0.id == fieldId })?.name ?? "未知字段")
+                        Text(record.createdAt.formatted(.relative(presentation: .named)))
+                            .font(.system(size: 13))
                             .foregroundColor(.secondary)
-                            .font(.system(size: 12))
-                            .frame(width: 80, alignment: .leading)
                         
-                        Text(value)
+                        Image(systemName: "chevron.right")
                             .font(.system(size: 14))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.gray)
                     }
                 }
+                .padding(.vertical, 12)
+                .padding(.horizontal, 16)
+                .background(Color.white)
+                .contentShape(Rectangle())
                 
-                HStack {
-                    Spacer()
-                    Text("Created: \(record.createdAt.formatted(.relative(presentation: .named)))")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            .padding()
-            .background(Color.gray.opacity(0.05))
-            .cornerRadius(8)
-            .onAppear {
-                print("Displaying record: \(record.id), Table: \(record.table?.name ?? "nil")")
+                Divider()
+                    .padding(.leading, 16)
             }
         }
     }
@@ -168,12 +177,15 @@ struct DataTableDetailView: View {
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .padding(.vertical, 40)
                         } else {
-                            LazyVStack(spacing: 12) {
+                            LazyVStack(spacing: 0) {
                                 ForEach(filteredRecords) { record in
-                                    RecordRow(record: record)
-                                        .transition(.opacity)
+                                    NavigationLink(destination: RecordDetailView(record: record)) {
+                                        RecordRow(record: record)
+                                    }
+                                    .buttonStyle(ScaleButtonStyle())
                                 }
                             }
+                            .background(Color.white)
                         }
                     }
                     .padding()
@@ -188,6 +200,15 @@ struct DataTableDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showAddRecord) {
             AddRecordView(table: table)
+        }
+    }
+
+    // 添加自定义按钮样式
+    private struct ScaleButtonStyle: ButtonStyle {
+        func makeBody(configuration: Configuration) -> some View {
+            configuration.label
+                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+                .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
         }
     }
 }
