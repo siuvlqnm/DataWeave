@@ -91,11 +91,11 @@ struct AddRecordView: View {
         // 创建新记录
         let record = DataRecord(table: table)
         
-        // 保存所有字段值
+        // 保存所有字段值，包括空值
         for field in table.fields {
-            if let value = fieldValues[field.id] {
-                record.setValue(value, for: field)
-            }
+            // 获取字段值，如果不存在则保存空字符串
+            let value = fieldValues[field.id] ?? ""
+            record.setValue(value, for: field)
         }
         
         modelContext.insert(record)
