@@ -277,11 +277,12 @@ struct FieldInputView: View {
         .sheet(isPresented: $showDatePicker) {
             NavigationView {
                 DatePicker(
-                    "选择日期和时间",
-                    selection: $selectedDate
+                    "选择日期",
+                    selection: $selectedDate,
+                    displayedComponents: [.date]
                 )
                 .datePickerStyle(.graphical)
-                .navigationTitle("选择日期和时间")
+                .navigationTitle("选择日期")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
@@ -293,7 +294,7 @@ struct FieldInputView: View {
                         Button("保存") {
                             let formatter = DateFormatter()
                             formatter.dateStyle = .medium
-                            formatter.timeStyle = .short
+                            formatter.timeStyle = .none
                             value = formatter.string(from: selectedDate)
                             showDatePicker = false
                         }
@@ -304,12 +305,17 @@ struct FieldInputView: View {
         }
         .sheet(isPresented: $showTimePicker) {
             NavigationView {
-                DatePicker(
-                    "选择时间",
-                    selection: $selectedTime,
-                    displayedComponents: [.hourAndMinute]
-                )
-                .datePickerStyle(.wheel)
+                VStack {
+                    Spacer()
+                    DatePicker(
+                        "",
+                        selection: $selectedTime,
+                        displayedComponents: [.hourAndMinute]
+                    )
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    Spacer()
+                }
                 .navigationTitle("选择时间")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -332,14 +338,6 @@ struct FieldInputView: View {
             .presentationDetents([.height(300)])
         }
     }
-    
-    // 初始化时设置当前日期和时间
-    // init(type: DataField.FieldType, value: Binding<String>) {
-    //     self.type = type
-    //     self._value = value
-    //     self._selectedDate = State(initialValue: Date())
-    //     self._selectedTime = State(initialValue: Date())
-    // }
 }
 
 #Preview {
