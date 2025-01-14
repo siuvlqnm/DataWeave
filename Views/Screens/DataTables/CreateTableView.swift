@@ -131,7 +131,7 @@ struct DraggableFieldsList: View {
     @Binding var editingFieldName: String
     
     var body: some View {
-        LazyVStack(spacing: 12) { // 添加间距
+        LazyVStack(spacing: 8) { // 减小间距从 12 到 8
             ForEach(Array(fields.enumerated()), id: \.element.id) { index, field in
                 FieldRowView(
                     index: index,
@@ -146,7 +146,7 @@ struct DraggableFieldsList: View {
                     isTarget: dropIndex == index
                 )
                 .padding(.horizontal, 16)
-                .padding(.vertical, 8)
+                .padding(.vertical, 4) // 减小垂直内边距从 8 到 4
                 .background(Color.white)
                 .cornerRadius(8)
                 .onTapGesture {
@@ -170,7 +170,7 @@ struct DraggableFieldsList: View {
                 )
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 4) // 减小整体垂直内边距从 8 到 4
     }
     
     private func startEditing(index: Int) {
