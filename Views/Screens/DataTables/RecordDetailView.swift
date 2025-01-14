@@ -8,14 +8,18 @@ struct RecordDetailView: View {
     private let accentColor = Color(hex: "A020F0")
     private let backgroundColor = Color(hex: "FAF0E6")
     
-    private var sortedFields: [(name: String, value: String, icon: String)] {
-        let fields = record.table?.fields.sorted(by: { $0.sortIndex < $1.sortIndex }) ?? []
-        return fields.compactMap { field in
+    private var sortedFields: [(name: String, value: String, icon: String, type: DataField.FieldType)] {
+        guard let fields = record.table?.fields else { return [] }
+        
+        let sortedTableFields = fields.sorted(by: { $0.sortIndex < $1.sortIndex })
+        
+        return sortedTableFields.compactMap { field in
             guard let value = record.values[field.id] else { return nil }
             return (
                 name: field.name,
                 value: value,
-                icon: field.type.icon
+                icon: field.type.icon,
+                type: field.type
             )
         }
     }
@@ -40,7 +44,7 @@ struct RecordDetailView: View {
                     
                     // 字段内容卡片
                     ForEach(sortedFields, id: \.name) { field in
-                        VStack(alignment: .leading, spacing: 8) {  // 减小内部间距
+                        VStack(alignment: .leading, spacing: 8) {
                             // 字段标题
                             HStack(spacing: 8) {
                                 Image(systemName: field.icon)
@@ -52,16 +56,27 @@ struct RecordDetailView: View {
                             }
                             
                             // 字段值
-                            Text(field.value)
-                                .font(.system(size: 16))
-                                .foregroundColor(.primary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(8)  // 减小内边距
-                                .background(Color.white.opacity(0.5))
-                                .cornerRadius(6)
-                                .textSelection(.enabled)
+                            Group {
+                                if field.type == .image, let imageData = Data(base64Encoded: field.value) {
+                                    Image(uiImage: UIImage(data: imageData) ?? UIImage())
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(height: 200)
+                                        .frame(maxWidth: .infinity)
+                                        .cornerRadius(8)
+                                } else {
+                                    Text(field.value)
+                                        .font(.system(size: 16))
+                                        .foregroundColor(.primary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(8)
+                                        .background(Color.white.opacity(0.5))
+                                        .cornerRadius(6)
+                                }
+                            }
+                            .textSelection(.enabled)
                         }
-                        .padding(12)  // 减小卡片内边距
+                        .padding(12)
                         .background(Color.white)
                         .cornerRadius(10)
                         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)

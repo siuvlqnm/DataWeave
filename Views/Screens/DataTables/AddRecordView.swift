@@ -114,6 +114,9 @@ struct FieldInputView: View {
     @State private var showDatePicker = false
     @State private var showTimePicker = false
     @State private var isFirstAppear = true
+    @State private var showImagePicker = false
+    @State private var selectedImage: UIImage?
+    @State private var imageData: Data?
     
     init(type: DataField.FieldType, value: Binding<String>) {
         self.type = type
@@ -390,13 +393,49 @@ struct FieldInputView: View {
                     Text("布尔")
                 }
             
-            // case .image:
-            //     ImagePickerView(image: $image)
-            //         .frame(height: 100)
-            //         .padding(4)
-            //         .background(Color.gray.opacity(0.1))
-            //         .cornerRadius(8)
-                
+            case .image:
+                VStack(alignment: .leading, spacing: 8) {
+                    if let image = selectedImage {
+                        Image(uiImage: image)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 200)
+                            .frame(maxWidth: .infinity)
+                            .cornerRadius(8)
+                            .onTapGesture {
+                                showImagePicker = true
+                            }
+                    } else {
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 12) {
+                                Image(systemName: "photo")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.gray)
+                                Text("点击选择图片")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.gray)
+                            }
+                            Spacer()
+                        }
+                        .frame(height: 200)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                        .onTapGesture {
+                            showImagePicker = true
+                        }
+                    }
+                }
+                .sheet(isPresented: $showImagePicker) {
+                    ImagePicker(image: $selectedImage) { image in
+                        if let imageData = image.jpegData(compressionQuality: 0.7) {
+                            self.imageData = imageData
+                            // 将图片数据转换为 Base64 字符串存储
+                            value = imageData.base64EncodedString()
+                        }
+                    }
+                }
+            
             // TODO: 实现其他类型的输入控件
             default:
                 TextField("请输入", text: $value)
