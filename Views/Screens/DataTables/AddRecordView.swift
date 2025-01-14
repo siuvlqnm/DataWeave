@@ -216,13 +216,26 @@ struct FieldInputView: View {
                     Spacer()
                     Image(systemName: "calendar.clock")
                         .foregroundColor(.gray)
+                    
+                    // 分开的日期和时间选择按钮
+                    HStack(spacing: 8) {
+                        Button(action: { showDatePicker = true }) {
+                            Image(systemName: "calendar")
+                                .foregroundColor(.gray)
+                        }
+                        
+                        Button(action: { showTimePicker = true }) {
+                            Image(systemName: "clock")
+                                .foregroundColor(.gray)
+                        }
+                    }
                 }
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
-                .onTapGesture {
-                    showDatePicker = true
-                }
+                // .onTapGesture {
+                //     showDatePicker = true
+                // }
             
             case .boolean:
                 Toggle(isOn: Binding(
