@@ -7,6 +7,7 @@ struct DataTableDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var showAddRecord = false
     @State private var searchText = ""
+    @State private var navigationPath = NavigationPath()
 
     @Query(sort: [SortDescriptor(\DataRecord.createdAt)]) var records: [DataRecord] // 修改了 sort 的写法
 
@@ -109,6 +110,7 @@ struct DataTableDetailView: View {
     }
     
     var body: some View {
+        // 移除外层 NavigationStack，使用 View 内容
         ZStack {
             backgroundColor.ignoresSafeArea()
             
@@ -183,7 +185,6 @@ struct DataTableDetailView: View {
                                         RecordRow(record: record)
                                     }
                                     .buttonStyle(.plain)
-                                    .transition(.opacity.combined(with: .move(edge: .trailing)))
                                 }
                             }
                             .background(Color.white)
@@ -199,6 +200,9 @@ struct DataTableDetailView: View {
         }
         .navigationTitle(table.name)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(for: DataRecord.self) { record in
+            RecordDetailView(record: record)
+        }
         .sheet(isPresented: $showAddRecord) {
             AddRecordView(table: table)
         }
@@ -215,12 +219,10 @@ struct DataTableDetailView: View {
 }
 
 #Preview {
-    NavigationView {
-        DataTableDetailView(
-            table: DataTable(
-                name: "测试表",
-                description: "这是一个测试表"
-            )
+    DataTableDetailView(
+        table: DataTable(
+            name: "测试表",
+            description: "这是一个测试表"
         )
-    }
-} 
+    )
+}

@@ -20,7 +20,7 @@ struct DataTablesView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {  // 替换 NavigationView
             ZStack {
                 backgroundColor.ignoresSafeArea()
                 
@@ -140,6 +140,7 @@ struct DataTableCards: View {
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.05), radius: 10)
         }
+        .buttonStyle(.plain)  // 添加按钮样式
     }
 }
 
