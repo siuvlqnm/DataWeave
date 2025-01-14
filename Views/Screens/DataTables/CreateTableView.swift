@@ -379,6 +379,10 @@ struct CreateTableView: View {
     
     private func createTable() {
         let table = DataTable(name: tableName, description: tableDescription)
+        // 保存时设置排序索引
+        fields.enumerated().forEach { index, field in
+            field.sortIndex = index
+        }
         table.fields = fields
         modelContext.insert(table)
         try? modelContext.save()

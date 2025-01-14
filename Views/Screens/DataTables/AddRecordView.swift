@@ -23,7 +23,8 @@ struct AddRecordView: View {
                 
                 ScrollView {
                     VStack(spacing: 20) {
-                        ForEach(table.fields) { field in
+                        // 按sortIndex排序展示字段
+                        ForEach(table.fields.sorted(by: { $0.sortIndex < $1.sortIndex })) { field in
                             VStack(alignment: .leading, spacing: 8) {
                                 // 字段标题
                                 HStack {
@@ -160,4 +161,4 @@ struct FieldInputView: View {
         DataField(name: "是否学生", type: .boolean)
     ]
     return AddRecordView(table: table)
-} 
+}
