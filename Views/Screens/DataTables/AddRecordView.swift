@@ -119,11 +119,28 @@ struct FieldInputView: View {
         self.type = type
         self._value = value
         
-        // 只初始化 State 变量
         let now = Date()
         self._selectedDate = State(initialValue: now)
         self._selectedTime = State(initialValue: now)
-        self._isFirstAppear = State(initialValue: true)
+        
+        // 初始化时设置完整的日期和时间
+        if value.wrappedValue.isEmpty {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy年MM月dd日"
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "HH:mm"
+            
+            switch type {
+            case .date:
+                value.wrappedValue = dateFormatter.string(from: now)
+            case .time:
+                value.wrappedValue = timeFormatter.string(from: now)
+            case .dateTime:
+                value.wrappedValue = "\(dateFormatter.string(from: now)) \(timeFormatter.string(from: now))"
+            default:
+                break
+            }
+        }
     }
     
     var body: some View {
@@ -184,8 +201,6 @@ struct FieldInputView: View {
                     Text(value.isEmpty ? "选择日期" : value)
                         .foregroundColor(value.isEmpty ? .secondary : .primary)
                     Spacer()
-                    Image(systemName: "calendar")
-                        .foregroundColor(.gray)
                 }
                 .padding()
                 .background(Color.gray.opacity(0.1))
@@ -193,14 +208,40 @@ struct FieldInputView: View {
                 .onTapGesture {
                     showDatePicker = true
                 }
+                .sheet(isPresented: $showDatePicker) {
+                    NavigationView {
+                        DatePicker(
+                            "选择日期",
+                            selection: $selectedDate,
+                            displayedComponents: [.date]
+                        )
+                        .datePickerStyle(.graphical)
+                        .navigationTitle("选择日期")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("取消") {
+                                    showDatePicker = false
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("保存") {
+                                    let formatter = DateFormatter()
+                                    formatter.dateFormat = "yyyy年MM月dd日"
+                                    value = formatter.string(from: selectedDate)
+                                    showDatePicker = false
+                                }
+                            }
+                        }
+                    }
+                    .presentationDetents([.medium])
+                }
                 
             case .time:
                 HStack {
                     Text(value.isEmpty ? "选择时间" : value)
                         .foregroundColor(value.isEmpty ? .secondary : .primary)
                     Spacer()
-                    Image(systemName: "clock")
-                        .foregroundColor(.gray)
                 }
                 .padding()
                 .background(Color.gray.opacity(0.1))
@@ -208,34 +249,138 @@ struct FieldInputView: View {
                 .onTapGesture {
                     showTimePicker = true
                 }
-                
-            case .dateTime:
-                HStack {
-                    Text(value.isEmpty ? "选择日期和时间" : value)
-                        .foregroundColor(value.isEmpty ? .secondary : .primary)
-                    Spacer()
-                    Image(systemName: "calendar.clock")
-                        .foregroundColor(.gray)
-                    
-                    // 分开的日期和时间选择按钮
-                    HStack(spacing: 8) {
-                        Button(action: { showDatePicker = true }) {
-                            Image(systemName: "calendar")
-                                .foregroundColor(.gray)
+                .sheet(isPresented: $showTimePicker) {
+                    NavigationView {
+                        VStack {
+                            Spacer()
+                            DatePicker(
+                                "",
+                                selection: $selectedTime,
+                                displayedComponents: [.hourAndMinute]
+                            )
+                            .datePickerStyle(.wheel)
+                            .labelsHidden()
+                            Spacer()
                         }
-                        
-                        Button(action: { showTimePicker = true }) {
-                            Image(systemName: "clock")
-                                .foregroundColor(.gray)
+                        .navigationTitle("选择时间")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("取消") {
+                                    showTimePicker = false
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("保存") {
+                                    let formatter = DateFormatter()
+                                    formatter.dateFormat = "HH:mm"
+                                    value = formatter.string(from: selectedTime)
+                                    showTimePicker = false
+                                }
+                            }
                         }
                     }
+                    .presentationDetents([.height(300)])
+                }
+                
+            case .dateTime:
+                HStack(spacing: 4) {
+                    // 日期部分
+                    Text(getDatePart(from: value))
+                        .foregroundColor(value.isEmpty ? .secondary : .primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .onTapGesture {
+                            showDatePicker = true
+                        }
+                    
+                    // 时间部分
+                    Text(getTimePart(from: value))
+                        .foregroundColor(value.isEmpty ? .secondary : .primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .onTapGesture {
+                            showTimePicker = true
+                        }
                 }
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
-                // .onTapGesture {
-                //     showDatePicker = true
-                // }
+                .sheet(isPresented: $showDatePicker) {
+                    NavigationView {
+                        DatePicker(
+                            "选择日期",
+                            selection: $selectedDate,
+                            displayedComponents: [.date]
+                        )
+                        .datePickerStyle(.graphical)
+                        .navigationTitle("选择日期")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("取消") {
+                                    showDatePicker = false
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("保存") {
+                                    let dateFormatter = DateFormatter()
+                                    dateFormatter.dateFormat = "yyyy年MM月dd日"
+                                    let newDate = dateFormatter.string(from: selectedDate)
+                                    let currentTime = getTimePart(from: value)
+                                    if currentTime == "选择时间" {
+                                        let timeFormatter = DateFormatter()
+                                        timeFormatter.dateFormat = "HH:mm"
+                                        value = "\(newDate) \(timeFormatter.string(from: Date()))"
+                                    } else {
+                                        value = "\(newDate) \(currentTime)"
+                                    }
+                                    showDatePicker = false
+                                }
+                            }
+                        }
+                    }
+                    .presentationDetents([.medium])
+                }
+                .sheet(isPresented: $showTimePicker) {
+                    NavigationView {
+                        VStack {
+                            Spacer()
+                            DatePicker(
+                                "",
+                                selection: $selectedTime,
+                                displayedComponents: [.hourAndMinute]
+                            )
+                            .datePickerStyle(.wheel)
+                            .labelsHidden()
+                            Spacer()
+                        }
+                        .navigationTitle("选择时间")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("取消") {
+                                    showTimePicker = false
+                                }
+                            }
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("保存") {
+                                    let timeFormatter = DateFormatter()
+                                    timeFormatter.dateFormat = "HH:mm"
+                                    let newTime = timeFormatter.string(from: selectedTime)
+                                    let currentDate = getDatePart(from: value)
+                                    if currentDate == "选择日期" {
+                                        let dateFormatter = DateFormatter()
+                                        dateFormatter.dateFormat = "yyyy年MM月dd日"
+                                        value = "\(dateFormatter.string(from: Date())) \(newTime)"
+                                    } else {
+                                        value = "\(currentDate) \(newTime)"
+                                    }
+                                    showTimePicker = false
+                                }
+                            }
+                        }
+                    }
+                    .presentationDetents([.height(300)])
+                }
             
             case .boolean:
                 Toggle(isOn: Binding(
@@ -267,18 +412,15 @@ struct FieldInputView: View {
                 
                 switch type {
                 case .date:
-                    formatter.dateStyle = .medium
-                    formatter.timeStyle = .none
+                    formatter.dateFormat = "yyyy年MM月dd日"
                     value = formatter.string(from: Date())
                     
                 case .time:
-                    formatter.dateStyle = .none
-                    formatter.timeStyle = .short
+                    formatter.dateFormat = "HH:mm"
                     value = formatter.string(from: Date())
                     
                 case .dateTime:
-                    formatter.dateStyle = .medium
-                    formatter.timeStyle = .short
+                    formatter.dateFormat = "yyyy年MM月dd日 HH:mm"
                     value = formatter.string(from: Date())
                     
                 default:
@@ -287,69 +429,24 @@ struct FieldInputView: View {
                 isFirstAppear = false
             }
         }
-        .sheet(isPresented: $showDatePicker) {
-            NavigationView {
-                DatePicker(
-                    "选择日期",
-                    selection: $selectedDate,
-                    displayedComponents: [.date]
-                )
-                .datePickerStyle(.graphical)
-                .navigationTitle("选择日期")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("取消") {
-                            showDatePicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("保存") {
-                            let formatter = DateFormatter()
-                            formatter.dateStyle = .medium
-                            formatter.timeStyle = .none
-                            value = formatter.string(from: selectedDate)
-                            showDatePicker = false
-                        }
-                    }
-                }
-            }
-            .presentationDetents([.medium])
+    }
+    
+    private func getDatePart(from value: String) -> String {
+        if value.isEmpty {
+            return "选择日期"
         }
-        .sheet(isPresented: $showTimePicker) {
-            NavigationView {
-                VStack {
-                    Spacer()
-                    DatePicker(
-                        "",
-                        selection: $selectedTime,
-                        displayedComponents: [.hourAndMinute]
-                    )
-                    .datePickerStyle(.wheel)
-                    .labelsHidden()
-                    Spacer()
-                }
-                .navigationTitle("选择时间")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("取消") {
-                            showTimePicker = false
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("保存") {
-                            let formatter = DateFormatter()
-                            formatter.dateStyle = .none
-                            formatter.timeStyle = .short
-                            value = formatter.string(from: selectedTime)
-                            showTimePicker = false
-                        }
-                    }
-                }
-            }
-            .presentationDetents([.height(300)])
+        let components = value.components(separatedBy: " ")
+        let datePart = components.first ?? ""
+        return datePart.isEmpty ? "选择日期" : datePart
+    }
+    
+    private func getTimePart(from value: String) -> String {
+        if value.isEmpty {
+            return "选择时间"
         }
+        let components = value.components(separatedBy: " ")
+        let timePart = components.count > 1 ? components[1] : ""
+        return timePart.isEmpty ? "选择时间" : timePart
     }
 }
 
