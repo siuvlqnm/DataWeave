@@ -3,6 +3,7 @@ import SwiftUI
 struct RecordDetailView: View {
     let record: DataRecord
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
@@ -97,7 +98,9 @@ struct RecordDetailView: View {
                     }
                     
                     Button(role: .destructive, action: {
-                        // 添加删除功能
+                        // 删除记录
+                        modelContext.delete(record)
+                        dismiss()
                     }) {
                         Label("删除", systemImage: "trash")
                     }
