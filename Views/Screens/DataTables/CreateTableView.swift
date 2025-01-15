@@ -230,7 +230,7 @@ struct CreateTableView: View {
                             Text("基本信息")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(mainColor)
-                            
+                            // 数据表名称还是其他名字，实例名称？或者其他名字，待定
                             VStack(spacing: 12) {
                                 TextField("数据表名称", text: $tableName)
                                     .textFieldStyle(.plain)
