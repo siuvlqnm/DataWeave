@@ -1,4 +1,5 @@
 import SwiftUI
+import MapKit
 
 struct RecordDetailView: View {
     let record: DataRecord
@@ -66,6 +67,15 @@ struct RecordDetailView: View {
                                         .frame(height: 200)
                                         .frame(maxWidth: .infinity)
                                         .cornerRadius(8)
+                                } else if field.type == .location, let coordinate = parseCoordinate(from: field.value) {
+                                    Map(position: .constant(MapCameraPosition.region(MKCoordinateRegion(
+                                        center: coordinate,
+                                        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+                                    )))) {
+                                        Marker("位置", coordinate: coordinate)
+                                    }
+                                    .frame(height: 200)
+                                    .cornerRadius(8)
                                 } else {
                                     Text(field.value)
                                         .font(.system(size: 16))
@@ -119,6 +129,16 @@ struct RecordDetailView: View {
         .sheet(isPresented: $showEditRecord) {
             EditRecordView(record: record)
         }
+    }
+    
+    private func parseCoordinate(from string: String) -> CLLocationCoordinate2D? {
+        let components = string.split(separator: ",")
+        guard components.count == 2,
+              let latitude = Double(components[0]),
+              let longitude = Double(components[1]) else {
+            return nil
+        }
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }
 
