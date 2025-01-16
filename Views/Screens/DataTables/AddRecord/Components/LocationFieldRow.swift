@@ -13,6 +13,8 @@ struct LocationFieldRow: View {
     @State private var searchResults: [MKMapItem] = []
     @State private var selectedPlace: MKMapItem?
     @State private var searchText = ""
+    @State private var isInitialLoad = true
+    @State private var cameraPosition: MapCameraPosition = .automatic
     
     var body: some View {
         VStack {
@@ -76,11 +78,23 @@ struct LocationFieldRow: View {
                         }
                     } else {
                         // 地图视图
-                        Map(position: $position) {
+                        Map(position: $position, interactionModes: .all) {
                             UserAnnotation()
                             
                             if let location = selectedLocation {
                                 Marker(selectedPlace?.name ?? "所选位置", coordinate: location)
+                            }
+                            
+                            ForEach(searchResults, id: \.self) { item in
+                                if let name = item.name {
+                                    Annotation(name, coordinate: item.placemark.coordinate) {
+                                        Image(systemName: "mappin.circle.fill")
+                                            .foregroundColor(.red)
+                                            .onTapGesture {
+                                                selectPlace(item)
+                                            }
+                                    }
+                                }
                             }
                         }
                         .mapStyle(.standard(pointsOfInterest: .including([
@@ -124,6 +138,23 @@ struct LocationFieldRow: View {
                         }
                     }
                 }
+                .onAppear {
+                    if isInitialLoad {
+                        locationManager.requestLocation()
+                        isInitialLoad = false
+                    }
+                }
+                .onChange(of: locationManager.lastLocation) { newLocation in
+                    if let location = newLocation {
+                        let region = MKCoordinateRegion(
+                            center: location.coordinate,
+                            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                        )
+                        position = .region(region)
+                        // 初始化时自动搜索附近地点
+                        searchLocations(near: location.coordinate)
+                    }
+                }
             }
         }
     }
@@ -141,6 +172,25 @@ struct LocationFieldRow: View {
             center: selectedLocation ?? CLLocationCoordinate2D(latitude: 39.9042, longitude: 116.4074),
             span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
         )
+        
+        let search = MKLocalSearch(request: request)
+        search.start { response, error in
+            guard let response = response else {
+                searchResults = []
+                return
+            }
+            searchResults = response.mapItems
+        }
+    }
+    
+    // 搜索附近地点
+    private func searchLocations(near coordinate: CLLocationCoordinate2D) {
+        let request = MKLocalSearch.Request()
+        request.region = MKCoordinateRegion(
+            center: coordinate,
+            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+        )
+        request.resultTypes = [.pointOfInterest]
         
         let search = MKLocalSearch(request: request)
         search.start { response, error in
@@ -190,7 +240,8 @@ struct LocationFieldRow: View {
 // 更新 LocationManager 以支持新的 MapKit 功能
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
-    @Published var currentLocation: CLLocationCoordinate2D?
+    @Published var locationStatus: CLAuthorizationStatus?
+    @Published var lastLocation: CLLocation?
     
     override init() {
         super.init()
@@ -203,11 +254,16 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        currentLocation = locations.first?.coordinate
+        guard let location = locations.first else { return }
+        lastLocation = location
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Location error: \(error.localizedDescription)")
+    }
+    
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        locationStatus = manager.authorizationStatus
     }
 }
 
