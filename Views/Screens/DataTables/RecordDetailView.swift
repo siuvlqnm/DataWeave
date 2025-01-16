@@ -4,6 +4,7 @@ struct RecordDetailView: View {
     let record: DataRecord
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @State private var showEditRecord = false
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
@@ -92,13 +93,18 @@ struct RecordDetailView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
                     Button(action: {
+                        showEditRecord = true
+                    }) {
+                        Label("编辑", systemImage: "pencil")
+                    }
+                    
+                    Button(action: {
                         // 添加分享功能
                     }) {
                         Label("分享", systemImage: "square.and.arrow.up")
                     }
                     
                     Button(role: .destructive, action: {
-                        // 删除记录
                         modelContext.delete(record)
                         dismiss()
                     }) {
@@ -109,6 +115,9 @@ struct RecordDetailView: View {
                         .foregroundColor(accentColor)
                 }
             }
+        }
+        .sheet(isPresented: $showEditRecord) {
+            EditRecordView(record: record)
         }
     }
 }
