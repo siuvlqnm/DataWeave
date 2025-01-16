@@ -93,7 +93,8 @@ class DataField {
             switch self {
             case .text, .richText, .number, .decimal,
                  .boolean, .date, .time, .dateTime,
-                 .image, .file, .email, .phone, .url:
+                 .image, .file, .email, .phone, .url,
+                 .location:
                 return false
             default:
                 return true

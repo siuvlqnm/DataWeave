@@ -116,9 +116,9 @@ struct RecordDetailView: View {
                 }
             }
         }
-        .sheet(isPresented: $showEditRecord) {
-            EditRecordView(record: record)
-        }
+        // .sheet(isPresented: $showEditRecord) {
+        //     EditRecordView(record: record)
+        // }
     }
 }
 
