@@ -14,8 +14,7 @@ struct LocationFieldRow: View {
     @State private var selectedPlace: MKMapItem?
     @State private var searchText = ""
     @State private var isInitialLoad = true
-    @State private var cameraPosition: MapCameraPosition = .automatic
-    
+
     var body: some View {
         VStack {
             if !value.isEmpty, let coordinate = parseCoordinate(from: value) {
@@ -58,7 +57,7 @@ struct LocationFieldRow: View {
                         .onChange(of: searchText) { newValue in
                             searchLocations(query: newValue)
                         }
-                    
+
                     if !searchResults.isEmpty {
                         // 搜索结果列表
                         List(searchResults, id: \.self) { item in
@@ -80,11 +79,11 @@ struct LocationFieldRow: View {
                         // 地图视图
                         Map(position: $position, interactionModes: .all) {
                             UserAnnotation()
-                            
+
                             if let location = selectedLocation {
                                 Marker(selectedPlace?.name ?? "所选位置", coordinate: location)
                             }
-                            
+
                             ForEach(searchResults, id: \.self) { item in
                                 if let name = item.name {
                                     Annotation(name, coordinate: item.placemark.coordinate) {
@@ -108,17 +107,6 @@ struct LocationFieldRow: View {
                             MapScaleView()
                             MapUserLocationButton()
                         }
-                        .gesture(
-                            LongPressGesture(minimumDuration: 0.5)
-                                .sequenced(before: DragGesture(minimumDistance: 0))
-                                .onEnded { value in
-                                    if let region = position.region {
-                                        selectedLocation = region.center
-                                        // 反向地理编码获取地点信息
-                                        lookupLocation(at: region.center)
-                                    }
-                                }
-                        )
                     }
                 }
                 .navigationTitle("选择位置")
@@ -133,6 +121,9 @@ struct LocationFieldRow: View {
                         Button("保存") {
                             if let location = selectedLocation {
                                 value = "\(location.latitude),\(location.longitude)"
+                                if let placeName = selectedPlace?.name {
+                                    print("保存地点: \(placeName)")
+                                }
                             }
                             showLocationPicker = false
                         }
@@ -151,57 +142,41 @@ struct LocationFieldRow: View {
                             span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
                         )
                         position = .region(region)
-                        // 初始化时自动搜索附近地点
-                        searchLocations(near: location.coordinate)
+                        searchLocations(coordinate: location.coordinate)
                     }
                 }
             }
         }
     }
-    
+
     // 搜索地点
     private func searchLocations(query: String) {
         guard !query.isEmpty else {
             searchResults = []
             return
         }
-        
+
         let request = MKLocalSearch.Request()
         request.naturalLanguageQuery = query
-        request.region = MKCoordinateRegion(
-            center: selectedLocation ?? CLLocationCoordinate2D(latitude: 39.9042, longitude: 116.4074),
+        request.region = position.region ?? MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 39.9042, longitude: 116.4074),
             span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
         )
-        
-        let search = MKLocalSearch(request: request)
-        search.start { response, error in
-            guard let response = response else {
-                searchResults = []
-                return
-            }
-            searchResults = response.mapItems
+
+        MKLocalSearch(request: request).start { response, error in
+            searchResults = response?.mapItems ?? []
         }
     }
-    
-    // 搜索附近地点
-    private func searchLocations(near coordinate: CLLocationCoordinate2D) {
+
+    private func searchLocations(coordinate: CLLocationCoordinate2D) {
         let request = MKLocalSearch.Request()
-        request.region = MKCoordinateRegion(
-            center: coordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-        )
-        request.resultTypes = [.pointOfInterest]
-        
-        let search = MKLocalSearch(request: request)
-        search.start { response, error in
-            guard let response = response else {
-                searchResults = []
-                return
-            }
-            searchResults = response.mapItems
+        request.region = MKCoordinateRegion(center: coordinate, span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05))
+
+        MKLocalSearch(request: request).start { response, error in
+            searchResults = response?.mapItems ?? []
         }
     }
-    
+
     // 选择地点
     private func selectPlace(_ place: MKMapItem) {
         selectedPlace = place
@@ -212,63 +187,36 @@ struct LocationFieldRow: View {
         ))
         searchText = ""
     }
-    
-    // 反向地理编码
-    private func lookupLocation(at coordinate: CLLocationCoordinate2D) {
-        let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
-        let geocoder = CLGeocoder()
-        
-        geocoder.reverseGeocodeLocation(location) { placemarks, error in
-            if let placemark = placemarks?.first {
-                selectedPlace = MKMapItem(placemark: MKPlacemark(placemark: placemark))
-            }
-        }
-    }
-    
+
     // 从字符串解析坐标
     private func parseCoordinate(from string: String) -> CLLocationCoordinate2D? {
         let components = string.split(separator: ",")
         guard components.count == 2,
               let latitude = Double(components[0]),
-              let longitude = Double(components[1]) else {
-            return nil
-        }
+              let longitude = Double(components[1]) else { return nil }
         return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
 }
 
-// 更新 LocationManager 以支持新的 MapKit 功能
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
-    @Published var locationStatus: CLAuthorizationStatus?
     @Published var lastLocation: CLLocation?
-    
+
     override init() {
         super.init()
         manager.delegate = self
     }
-    
+
     func requestLocation() {
         manager.requestWhenInUseAuthorization()
         manager.requestLocation()
     }
-    
+
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.first else { return }
-        lastLocation = location
+        lastLocation = locations.first
     }
-    
+
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Location error: \(error.localizedDescription)")
     }
-    
-    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        locationStatus = manager.authorizationStatus
-    }
-}
-
-#Preview {
-    @State var location = ""
-    return LocationFieldRow(value: $location)
-        .padding()
 }
