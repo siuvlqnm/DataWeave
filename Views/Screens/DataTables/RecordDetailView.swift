@@ -142,29 +142,6 @@ struct RecordDetailView: View {
     }
 }
 
-private struct InfoRow: View {
-    let icon: String
-    let label: String
-    let value: String
-    
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(.secondary)
-                .frame(width: 16)
-            
-            Text(label)
-                .foregroundColor(.secondary)
-            
-            Spacer()
-            
-            Text(value)
-                .foregroundColor(Color(hex: "1A202C"))
-        }
-        .font(.system(size: 14))
-    }
-}
-
 #Preview {
     let table = DataTable(name: "测试表")
     let record = DataRecord(table: table)

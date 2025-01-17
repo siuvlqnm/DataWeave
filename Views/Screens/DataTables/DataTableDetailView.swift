@@ -9,7 +9,7 @@ struct DataTableDetailView: View {
     @State private var searchText = ""
     @State private var navigationPath = NavigationPath()
 
-    @Query(sort: [SortDescriptor(\DataRecord.createdAt)]) var records: [DataRecord] // 修改了 sort 的写法
+    @Query(sort: [SortDescriptor(\DataRecord.createdAt)]) var records: [DataRecord]
 
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
@@ -19,80 +19,10 @@ struct DataTableDetailView: View {
         self.table = table
         print("Initializing DataTableDetailView for table: \(table.name), ID: \(String(describing: table.id))")
 
-        // 捕获 table.id 的值
         let tableId = table.id
-
         _records = Query(filter: #Predicate<DataRecord> { record in
             record.table?.id == tableId
-        }, sort: [SortDescriptor(\DataRecord.createdAt)]) // 显式使用 SortDescriptor
-    }
-    
-    private struct InfoRow: View {
-        let icon: String
-        let label: String
-        let value: String
-        
-        var body: some View {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .foregroundColor(.secondary)
-                    .frame(width: 16)
-                
-                Text(label + "：")
-                    .foregroundColor(.secondary)
-                
-                Text(value)
-                    .foregroundColor(Color(hex: "1A202C"))
-            }
-            .font(.system(size: 14))
-        }
-    }
-    
-    private struct RecordRow: View {
-        let record: DataRecord
-        
-        var body: some View {
-            VStack(spacing: 0) {
-                HStack(spacing: 16) {
-                    // 左侧主要内容
-                    if let firstField = record.table?.fields.sorted(by: { $0.sortIndex < $1.sortIndex }).first,
-                       let value = record.values[firstField.id] {
-                        VStack(alignment: .leading, spacing: 4) {
-                            // 字段名称
-                            Text(firstField.name)
-                                .font(.system(size: 13))
-                                .foregroundColor(.secondary)
-                            
-                            // 字段值
-                            Text(value)
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundColor(.primary)
-                                .lineLimit(1)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // 右侧时间和箭头
-                    HStack(spacing: 8) {
-                        Text(record.createdAt.formatted(.relative(presentation: .named)))
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                        
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
-                            .foregroundColor(.gray)
-                    }
-                }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 16)
-                .background(Color.white)
-                .contentShape(Rectangle())
-                
-                Divider()
-                    .padding(.leading, 16)
-            }
-        }
+        }, sort: [SortDescriptor(\DataRecord.createdAt)])
     }
     
     private var filteredRecords: [DataRecord] {
@@ -110,7 +40,6 @@ struct DataTableDetailView: View {
     }
     
     var body: some View {
-        // 移除外层 NavigationStack，使用 View 内容
         ZStack {
             backgroundColor.ignoresSafeArea()
             
@@ -206,14 +135,56 @@ struct DataTableDetailView: View {
         .sheet(isPresented: $showAddRecord) {
             AddRecordView(table: table)
         }
-    }
-
-    // 添加自定义按钮样式
-    private struct ScaleButtonStyle: ButtonStyle {
-        func makeBody(configuration: Configuration) -> some View {
-            configuration.label
-                .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
-                .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Menu {
+                    Button(action: {}) {
+                        Label("选择", systemImage: "checkmark.circle")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("排序", systemImage: "arrow.up.arrow.down")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("索引", systemImage: "doc.text.magnifyingglass")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("字段", systemImage: "list.bullet")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("列表", systemImage: "list.dash")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("摘要", systemImage: "minus.circle")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("新建视图", systemImage: "plus.circle")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("视图", systemImage: "eye")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("浏览", systemImage: "binoculars")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("打印", systemImage: "printer")
+                    }
+                    
+                    Button(action: {}) {
+                        Label("编辑", systemImage: "square.and.pencil")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
+                }
+            }
         }
     }
 }
