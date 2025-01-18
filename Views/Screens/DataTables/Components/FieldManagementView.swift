@@ -12,6 +12,8 @@ struct FieldManagementView: View {
     @State private var draggedField: DataField?
     @State private var selectedField: DataField?
     @State private var isEditing = false
+    @State private var allFieldTypes = DataField.FieldType.allCases
+    @State private var showAllFields = false
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
@@ -29,42 +31,90 @@ struct FieldManagementView: View {
             ZStack {
                 backgroundColor.ignoresSafeArea()
                 
-                ScrollView {
-                    VStack(spacing: 16) {
-                        // 简化的说明卡片
-                        HStack(spacing: 8) {
-                            Image(systemName: "info.circle.fill")
-                                .foregroundColor(accentColor)
-                            Text("拖动调整字段顺序，点击编辑属性")
-                                .font(.system(size: 14))
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal)
-                        
-                        // 字段列表
-                        VStack(spacing: 12) {
-                            ForEach(tempFields) { field in
-                                FieldRow(
-                                    field: field,
-                                    isEditing: $isEditing,
-                                    onTap: { selectedField = field },
-                                    onDelete: { deleteField(field) }
-                                )
-                                .onDrag {
-                                    self.draggedField = field
-                                    return NSItemProvider()
-                                }
-                                .onDrop(of: [.text], delegate: DropViewDelegate(
-                                    item: field,
-                                    items: $tempFields,
-                                    draggedItem: $draggedField
-                                ))
+                VStack(spacing: 0) {
+                    // 现有字段列表
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            // 简化的说明卡片
+                            HStack(spacing: 8) {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundColor(accentColor)
+                                Text("拖动调整字段顺序，点击编辑属性")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.secondary)
                             }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                            
+                            // 字段列表
+                            VStack(spacing: 12) {
+                                ForEach(tempFields) { field in
+                                    FieldRow(
+                                        field: field,
+                                        isEditing: $isEditing,
+                                        onTap: { selectedField = field },
+                                        onDelete: { deleteField(field) }
+                                    )
+                                    .onDrag {
+                                        self.draggedField = field
+                                        return NSItemProvider()
+                                    }
+                                    .onDrop(of: [.text], delegate: DropViewDelegate(
+                                        item: field,
+                                        items: $tempFields,
+                                        draggedItem: $draggedField
+                                    ))
+                                }
+                            }
+                            .padding(.horizontal)
                         }
-                        .padding(.horizontal)
+                        .padding(.vertical)
                     }
-                    .padding(.vertical)
+                    
+                    // 底部所有字段类型列表
+                    if isEditing {
+                        Divider()
+                        ScrollView {
+                            LazyVGrid(columns: [
+                                GridItem(.flexible()),
+                                GridItem(.flexible()),
+                                GridItem(.flexible())
+                            ], spacing: 12) {
+                                ForEach(allFieldTypes, id: \.self) { fieldType in
+                                    Button(action: {
+                                        addNewField(type: fieldType)
+                                    }) {
+                                        VStack(spacing: 8) {
+                                            Image(systemName: fieldType.icon)
+                                                .font(.system(size: 24))
+                                            Text(fieldType.rawValue)
+                                                .font(.system(size: 12))
+                                            if fieldType.isPro {
+                                                Text("PRO")
+                                                    .font(.system(size: 10))
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.yellow.opacity(0.2))
+                                                    .cornerRadius(4)
+                                            }
+                                        }
+                                        .frame(height: 80)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.white)
+                                        .cornerRadius(8)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                        )
+                                    }
+                                    .foregroundColor(fieldType.isPro ? .gray : mainColor)
+                                }
+                            }
+                            .padding()
+                        }
+                        .frame(height: 200)
+                        .background(Color.gray.opacity(0.05))
+                    }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -72,8 +122,7 @@ struct FieldManagementView: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(.gray)
-                            .font(.system(size: 20))
+                            .foregroundColor(accentColor)
                     }
                 }
                 
@@ -91,19 +140,7 @@ struct FieldManagementView: View {
                             .foregroundColor(accentColor)
                     }
                 }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if !isEditing {
-                        Button(action: { showAddField = true }) {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(accentColor)
-                        }
-                    }
-                }
             }
-        }
-        .sheet(isPresented: $showAddField) {
-            AddFieldView(fields: $fields)
         }
         .sheet(item: $selectedField) { field in
             EditFieldView(table: table, field: field)
@@ -122,6 +159,15 @@ struct FieldManagementView: View {
         if let index = tempFields.firstIndex(of: field) {
             tempFields.remove(at: index)
         }
+    }
+    
+    private func addNewField(type: DataField.FieldType) {
+        let newField = DataField(
+            name: "\(type.rawValue)\(tempFields.count + 1)",
+            type: type,
+            isRequired: false
+        )
+        tempFields.append(newField)
     }
 }
 
