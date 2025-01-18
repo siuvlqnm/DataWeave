@@ -14,6 +14,13 @@ struct EditFieldView: View {
     @State private var defaultValue: String
     @State private var showProFeatureAlert = false
     @State private var showDeleteAlert = false
+    @State private var showInList = true
+    @State private var hideIfEmpty = false
+    @State private var showCaption = false
+    
+    private let mainColor = Color(hex: "1A202C")
+    private let accentColor = Color(hex: "A020F0")
+    private let backgroundColor = Color(hex: "FAF0E6")
     
     init(table: DataTable, field: DataField) {
         self.table = table
@@ -37,38 +44,53 @@ struct EditFieldView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("基本信息") {
+                Section {
                     TextField("字段名称", text: $fieldName)
-                    
-                    Picker("字段类型", selection: $fieldType) {
+                }
+                
+                Section("样式") {
+                    Picker("", selection: $fieldType) {
                         ForEach(DataField.FieldType.allCases, id: \.self) { type in
                             Label {
                                 Text(type.rawValue)
+                                    .foregroundColor(type.isPro ? .gray : mainColor)
                             } icon: {
                                 Image(systemName: type.icon)
+                                    .foregroundColor(type.isPro ? .gray : accentColor)
                             }
                             .tag(type)
                         }
                     }
-                    .disabled(hasRecordsWithValues) // 如果已有数据，禁止修改类型
+                    .pickerStyle(.navigationLink)
+                    .disabled(hasRecordsWithValues)
                 }
                 
-                Section("字段设置") {
+                Section("可见性") {
+                    Toggle("在列表中显示", isOn: $showInList)
+                        .tint(accentColor)
+                    Toggle("为空时隐藏", isOn: $hideIfEmpty)
+                        .tint(accentColor)
+                }
+                
+                Section("详细信息") {
                     Toggle("必填字段", isOn: $isRequired)
-                    
-                    TextField("默认值", text: $defaultValue)
+                        .tint(accentColor)
+                    Toggle("允许搜索", isOn: .constant(true))
+                        .tint(.green)
+                    if fieldType != .boolean && fieldType != .image && fieldType != .file {
+                        TextField("默认值", text: $defaultValue)
+                    }
                 }
                 
                 Section {
                     Button(role: .destructive, action: { showDeleteAlert = true }) {
-                        HStack {
-                            Image(systemName: "trash")
-                            Text("删除字段")
-                        }
+                        Text("删除字段")
                     }
-                    .disabled(hasRecordsWithValues) // 如果已有数据，禁止删除
+                    .disabled(hasRecordsWithValues)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(backgroundColor)
             .navigationTitle("编辑字段")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -89,10 +111,10 @@ struct EditFieldView: View {
                     .disabled(fieldName.isEmpty)
                 }
             }
-            .alert("Pro 功能", isPresented: $showProFeatureAlert) {
+            .alert("专业版功能", isPresented: $showProFeatureAlert) {
                 Button("确定") {}
             } message: {
-                Text("该字段类型需要升级到 Pro 版本才能使用")
+                Text("此字段类型需要专业版")
             }
             .alert("删除字段", isPresented: $showDeleteAlert) {
                 Button("取消", role: .cancel) {}
