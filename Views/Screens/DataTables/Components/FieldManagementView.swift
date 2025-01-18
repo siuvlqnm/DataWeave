@@ -8,6 +8,7 @@ struct FieldManagementView: View {
     let table: DataTable
     @State private var showAddField = false
     @State private var fields: [DataField]
+    @State private var tempFields: [DataField]
     @State private var draggedField: DataField?
     @State private var selectedField: DataField?
     @State private var isEditing = false
@@ -18,7 +19,9 @@ struct FieldManagementView: View {
     
     init(table: DataTable) {
         self.table = table
-        _fields = State(initialValue: table.fields.sorted(by: { $0.sortIndex < $1.sortIndex }))
+        let sortedFields = table.fields.sorted(by: { $0.sortIndex < $1.sortIndex })
+        _fields = State(initialValue: sortedFields)
+        _tempFields = State(initialValue: sortedFields)
     }
     
     var body: some View {
@@ -41,7 +44,7 @@ struct FieldManagementView: View {
                         
                         // 字段列表
                         VStack(spacing: 12) {
-                            ForEach(fields) { field in
+                            ForEach(tempFields) { field in
                                 FieldRow(
                                     field: field,
                                     isEditing: $isEditing,
@@ -49,10 +52,14 @@ struct FieldManagementView: View {
                                     onDelete: { deleteField(field) }
                                 )
                                 .onDrag {
-                                    draggedField = field
+                                    self.draggedField = field
                                     return NSItemProvider()
                                 }
-                                .onDrop(of: [.text], delegate: DropViewDelegate(item: field, items: $fields, draggedItem: $draggedField))
+                                .onDrop(of: [.text], delegate: DropViewDelegate(
+                                    item: field,
+                                    items: $tempFields,
+                                    draggedItem: $draggedField
+                                ))
                             }
                         }
                         .padding(.horizontal)
@@ -63,19 +70,18 @@ struct FieldManagementView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
-                        if isEditing {
-                            isEditing = false
-                        } else {
-                            dismiss()
-                        }
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 20))
                     }
-                    .foregroundColor(mainColor)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         if isEditing {
+                            fields = tempFields
+                            updateFieldIndexes()
                             isEditing = false
                         } else {
                             isEditing = true
@@ -113,9 +119,8 @@ struct FieldManagementView: View {
     }
     
     private func deleteField(_ field: DataField) {
-        if let index = fields.firstIndex(of: field) {
-            fields.remove(at: index)
-            updateFieldIndexes()
+        if let index = tempFields.firstIndex(of: field) {
+            tempFields.remove(at: index)
         }
     }
 }
@@ -130,7 +135,11 @@ private struct FieldRow: View {
     private let accentColor = Color(hex: "A020F0")
     
     var body: some View {
-        Button(action: onTap) {
+        Button(action: {
+            if !isEditing {
+                onTap()
+            }
+        }) {
             HStack {
                 if isEditing {
                     Button(action: onDelete) {
@@ -184,7 +193,6 @@ private struct FieldRow: View {
             .shadow(color: Color.black.opacity(0.05), radius: 3)
         }
         .buttonStyle(.plain)
-        .disabled(isEditing)
     }
 }
 
@@ -194,20 +202,32 @@ struct DropViewDelegate: DropDelegate {
     @Binding var draggedItem: DataField?
     
     func performDrop(info: DropInfo) -> Bool {
-        return true
+        guard let draggedItem = self.draggedItem else { return false }
+        
+        if let from = items.firstIndex(of: draggedItem),
+           let to = items.firstIndex(of: item) {
+            if items[to] != items[from] {
+                items.move(fromOffsets: IndexSet(integer: from),
+                          toOffset: to > from ? to + 1 : to)
+            }
+            return true
+        }
+        return false
     }
     
     func dropEntered(info: DropInfo) {
-        guard let draggedItem = draggedItem else { return }
+        guard let draggedItem = self.draggedItem else { return }
         
-        if draggedItem != item {
-            let from = items.firstIndex(of: draggedItem)!
-            let to = items.firstIndex(of: item)!
-            
+        if let from = items.firstIndex(of: draggedItem),
+           let to = items.firstIndex(of: item) {
             if items[to] != items[from] {
                 items.move(fromOffsets: IndexSet(integer: from),
                           toOffset: to > from ? to + 1 : to)
             }
         }
+    }
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
     }
 } 
