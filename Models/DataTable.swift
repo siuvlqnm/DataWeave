@@ -28,16 +28,18 @@ class DataField {
     var name: String
     var type: FieldType
     var isRequired: Bool
+    var showInList: Bool
     var defaultValue: String?
     var sortIndex: Int
 
-    init(name: String, type: FieldType, isRequired: Bool = false, defaultValue: String? = nil, sortIndex: Int = 0) {
+    init(name: String, type: FieldType, isRequired: Bool = false, defaultValue: String? = nil, sortIndex: Int = 0, showInList: Bool = false) {
         self.id = UUID()
         self.name = name
         self.type = type
         self.isRequired = isRequired
         self.defaultValue = defaultValue
         self.sortIndex = sortIndex
+        self.showInList = showInList
     }
 
     enum FieldType: String, Codable, CaseIterable {

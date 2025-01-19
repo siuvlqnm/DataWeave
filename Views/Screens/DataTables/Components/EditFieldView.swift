@@ -28,6 +28,7 @@ struct EditFieldView: View {
         _fieldName = State(initialValue: field.name)
         _fieldType = State(initialValue: field.type)
         _isRequired = State(initialValue: field.isRequired)
+        _showInList = State(initialValue: field.showInList)
         _defaultValue = State(initialValue: field.defaultValue ?? "")
     }
     
@@ -75,8 +76,8 @@ struct EditFieldView: View {
                 Section("详细信息") {
                     Toggle("必填字段", isOn: $isRequired)
                         .tint(accentColor)
-                    Toggle("允许搜索", isOn: .constant(true))
-                        .tint(.green)
+                    // Toggle("允许搜索", isOn: .constant(true))
+                    //     .tint(.green)
                     if fieldType != .boolean && fieldType != .image && fieldType != .file {
                         TextField("默认值", text: $defaultValue)
                     }
@@ -132,7 +133,7 @@ struct EditFieldView: View {
         field.type = fieldType
         field.isRequired = isRequired
         field.defaultValue = defaultValue.isEmpty ? nil : defaultValue
-        
+        field.showInList = showInList
         try? modelContext.save()
         dismiss()
     }
