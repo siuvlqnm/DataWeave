@@ -96,7 +96,7 @@ class DataField {
             case .text, .richText, .number, .decimal,
                  .boolean, .date, .time, .dateTime,
                  .image, .file, .email, .phone, .url,
-                 .location:
+                 .location, .color, .barcode, .qrCode:
                 return false
             default:
                 return true

@@ -117,6 +117,7 @@ struct FieldManagementView: View {
                     }
                 }
             }
+            .navigationTitle("字段管理")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
