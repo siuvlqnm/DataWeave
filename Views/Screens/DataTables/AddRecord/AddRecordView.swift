@@ -84,6 +84,11 @@ struct AddRecordView: View {
     private func saveRecord() {
         let record = DataRecord(table: table)
         
+        // 确保 sortIndex 最小的字段的 showInList 为 true
+        if let firstField = table.fields.min(by: { $0.sortIndex < $1.sortIndex }) {
+            firstField.showInList = true
+        }
+        
         for field in table.fields {
             let value = fieldValues[field.id] ?? ""
             record.setValue(value, for: field)

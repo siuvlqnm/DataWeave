@@ -9,10 +9,8 @@ struct EditFieldView: View {
     let field: DataField
     
     @State private var fieldName: String
-    @State private var fieldType: DataField.FieldType
     @State private var isRequired: Bool
     @State private var defaultValue: String
-    @State private var showProFeatureAlert = false
     @State private var showDeleteAlert = false
     @State private var showInList = true
     @State private var hideIfEmpty = false
@@ -26,14 +24,9 @@ struct EditFieldView: View {
         self.table = table
         self.field = field
         _fieldName = State(initialValue: field.name)
-        _fieldType = State(initialValue: field.type)
         _isRequired = State(initialValue: field.isRequired)
         _showInList = State(initialValue: field.showInList)
         _defaultValue = State(initialValue: field.defaultValue ?? "")
-    }
-    
-    private var isProType: Bool {
-        fieldType.isPro
     }
     
     private var hasRecordsWithValues: Bool {
@@ -49,23 +42,6 @@ struct EditFieldView: View {
                     TextField("字段名称", text: $fieldName)
                 }
                 
-                Section("样式") {
-                    Picker("", selection: $fieldType) {
-                        ForEach(DataField.FieldType.allCases, id: \.self) { type in
-                            Label {
-                                Text(type.rawValue)
-                                    .foregroundColor(type.isPro ? .gray : mainColor)
-                            } icon: {
-                                Image(systemName: type.icon)
-                                    .foregroundColor(type.isPro ? .gray : accentColor)
-                            }
-                            .tag(type)
-                        }
-                    }
-                    .pickerStyle(.navigationLink)
-                    .disabled(hasRecordsWithValues)
-                }
-                
                 Section("可见性") {
                     Toggle("在列表中显示", isOn: $showInList)
                         .tint(accentColor)
@@ -76,9 +52,7 @@ struct EditFieldView: View {
                 Section("详细信息") {
                     Toggle("必填字段", isOn: $isRequired)
                         .tint(accentColor)
-                    // Toggle("允许搜索", isOn: .constant(true))
-                    //     .tint(.green)
-                    if fieldType != .boolean && fieldType != .image && fieldType != .file {
+                    if field.type != .boolean && field.type != .image && field.type != .file {
                         TextField("默认值", text: $defaultValue)
                     }
                 }
@@ -103,19 +77,10 @@ struct EditFieldView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("保存") {
-                        if isProType && field.type != fieldType {
-                            showProFeatureAlert = true
-                        } else {
-                            updateField()
-                        }
+                        updateField()
                     }
                     .disabled(fieldName.isEmpty)
                 }
-            }
-            .alert("专业版功能", isPresented: $showProFeatureAlert) {
-                Button("确定") {}
-            } message: {
-                Text("此字段类型需要专业版")
             }
             .alert("删除字段", isPresented: $showDeleteAlert) {
                 Button("取消", role: .cancel) {}
@@ -130,7 +95,6 @@ struct EditFieldView: View {
     
     private func updateField() {
         field.name = fieldName
-        field.type = fieldType
         field.isRequired = isRequired
         field.defaultValue = defaultValue.isEmpty ? nil : defaultValue
         field.showInList = showInList
