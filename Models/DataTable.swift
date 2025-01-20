@@ -10,8 +10,9 @@ class DataTable {
     var createdAt: Date
     var updatedAt: Date
     var records: [DataRecord] // 反向关联
+    @Relationship(deleteRule: .cascade) var views: [DataTableView]
 
-    init(name: String, description: String? = nil) {
+    init(name: String, description: String = "") {
         self.id = UUID()
         self.name = name
         self.tableDescription = description
@@ -19,6 +20,7 @@ class DataTable {
         self.records = [] // 初始化为空数组
         self.createdAt = Date()
         self.updatedAt = Date()
+        self.views = []
     }
 }
 

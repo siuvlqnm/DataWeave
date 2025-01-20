@@ -9,6 +9,7 @@ struct DataTableDetailView: View {
     @State private var searchText = ""
     @State private var navigationPath = NavigationPath()
     @State private var showFieldManagement = false
+    @State private var showViewManagement = false
 
     @Query(sort: [SortDescriptor(\DataRecord.createdAt)]) var records: [DataRecord]
 
@@ -134,6 +135,9 @@ struct DataTableDetailView: View {
         .sheet(isPresented: $showFieldManagement) {
             FieldManagementView(table: table)
         }
+        .sheet(isPresented: $showViewManagement) {
+            DataTableViewManagementView(table: table)
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
@@ -165,9 +169,12 @@ struct DataTableDetailView: View {
                     //     Label("新建视图", systemImage: "plus.circle")
                     // }
                     
-                    // Button(action: {}) {
-                    //     Label("视图", systemImage: "eye")
-                    // }
+                    Button(action: {
+                        // Show view management sheet
+                        showViewManagement = true
+                    }) {
+                        Label("视图", systemImage: "eye")
+                    }
                     
                     // Button(action: {}) {
                     //     Label("浏览", systemImage: "binoculars")
