@@ -36,66 +36,83 @@ struct AddFilterView: View {
                 VStack {
                     List {
                         // 字段选择部分
-                        Section("字段") {
-                            ForEach(table.fields) { field in
-                                HStack {
-                                    Text(field.name)
-                                        .foregroundColor(mainColor)
-                                    Spacer()
-                                    if selectedFieldId == field.id.uuidString {
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(accentColor)
+                        Section {
+                            Menu {
+                                ForEach(table.fields) { field in
+                                    Button(action: {
+                                        selectedFieldId = field.id.uuidString
+                                    }) {
+                                        HStack {
+                                            Text(field.name)
+                                            if selectedFieldId == field.id.uuidString {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
                                     }
                                 }
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    selectedFieldId = field.id.uuidString
-                                }
-                            }
-                        }
-                        
-                        // 系统参数部分
-                        Section("系统参数") {
-                            ForEach(SystemField.allCases, id: \.self) { systemField in
-                                HStack {
-                                    Text(systemField.name)
-                                        .foregroundColor(mainColor)
-                                    Spacer()
-                                    if selectedFieldId == systemField.rawValue {
-                                        Image(systemName: "checkmark")
-                                            .foregroundColor(accentColor)
+                                
+                                // 系统字段选项
+                                ForEach(SystemField.allCases, id: \.self) { systemField in
+                                    Button(action: {
+                                        selectedFieldId = systemField.rawValue
+                                    }) {
+                                        HStack {
+                                            Text(systemField.name)
+                                            if selectedFieldId == systemField.rawValue {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
                                     }
                                 }
-                                .contentShape(Rectangle())
-                                .onTapGesture {
-                                    selectedFieldId = systemField.rawValue
+                            } label: {
+                                HStack {
+                                    Text("字段")
+                                        .foregroundColor(mainColor)
+                                    Spacer()
+                                    if let fieldId = selectedFieldId {
+                                        if let field = table.fields.first(where: { $0.id.uuidString == fieldId }) {
+                                            Text(field.name)
+                                        } else if let systemField = SystemField(rawValue: fieldId) {
+                                            Text(systemField.name)
+                                        }
+                                    }
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .foregroundColor(.gray)
                                 }
                             }
                         }
                         
                         // 操作选择部分
                         if selectedFieldId != nil {
-                            Section("操作") {
-                                ForEach(ViewFilter.FilterOperation.allCases, id: \.self) { operation in
-                                    HStack {
-                                        Text(operation.rawValue)
-                                            .foregroundColor(mainColor)
-                                        Spacer()
-                                        if selectedOperation == operation {
-                                            Image(systemName: "checkmark")
-                                                .foregroundColor(accentColor)
+                            Section {
+                                Menu {
+                                    ForEach(ViewFilter.FilterOperation.allCases, id: \.self) { operation in
+                                        Button(action: {
+                                            selectedOperation = operation
+                                        }) {
+                                            HStack {
+                                                Text(operation.rawValue)
+                                                if selectedOperation == operation {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
                                         }
                                     }
-                                    .contentShape(Rectangle())
-                                    .onTapGesture {
-                                        selectedOperation = operation
+                                } label: {
+                                    HStack {
+                                        Text("操作")
+                                            .foregroundColor(mainColor)
+                                        Spacer()
+                                        Text(selectedOperation.rawValue)
+                                        Image(systemName: "chevron.up.chevron.down")
+                                            .foregroundColor(.gray)
                                     }
                                 }
                             }
                             
                             // 值输入部分
                             if !isEmptyValueOperation(selectedOperation) {
-                                Section("值") {
+                                Section {
                                     TextField("请输入筛选值", text: $filterValue)
                                         .foregroundColor(mainColor)
                                 }
@@ -104,7 +121,7 @@ struct AddFilterView: View {
                     }
                     .scrollContentBackground(.hidden)
                     
-                    // 添加过滤按钮
+                    // 保存按钮
                     Button(action: {
                         if let fieldId = selectedFieldId {
                             let filter = ViewFilter(
@@ -117,8 +134,8 @@ struct AddFilterView: View {
                         }
                     }) {
                         HStack {
-                            Image(systemName: "plus.circle.fill")
-                            Text("添加过滤")
+                            Image(systemName: "bookmark.fill")
+                            Text("保存过滤器")
                         }
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(.white)
@@ -131,7 +148,7 @@ struct AddFilterView: View {
                     .padding()
                 }
             }
-            .navigationTitle("添加过滤")
+            .navigationTitle("新建过滤器")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -139,6 +156,21 @@ struct AddFilterView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(accentColor)
                     }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("应用") {
+                        if let fieldId = selectedFieldId {
+                            let filter = ViewFilter(
+                                fieldId: fieldId,
+                                operation: selectedOperation,
+                                value: filterValue
+                            )
+                            onAdd(filter)
+                            dismiss()
+                        }
+                    }
+                    .disabled(selectedFieldId == nil)
                 }
             }
         }
