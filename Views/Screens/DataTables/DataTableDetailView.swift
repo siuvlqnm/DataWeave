@@ -194,10 +194,7 @@ struct DataTableDetailView: View {
                         Label("字段", systemImage: "list.bullet")
                     }
                     
-                    Button(action: {
-                        // Show view management sheet
-                        showViewManagement = true
-                    }) {
+                    Button(action: { showViewManagement = true }) {
                         Label("视图", systemImage: "eye")
                     }
                 } label: {

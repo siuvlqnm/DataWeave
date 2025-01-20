@@ -11,6 +11,8 @@ struct DataTableViewManagementView: View {
     @State private var draggedView: DataTableView?
     @State private var selectedView: DataTableView?
     @State private var isEditing = false
+    @State private var showAddFilter = false
+    @State private var selectedViewForFilter: DataTableView?
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
@@ -48,7 +50,10 @@ struct DataTableViewManagementView: View {
                                     ViewRow(
                                         view: view,
                                         isEditing: $isEditing,
-                                        onTap: { selectedView = view },
+                                        onTap: {
+                                            selectedViewForFilter = view
+                                            showAddFilter = true
+                                        },
                                         onDelete: { deleteView(view) }
                                     )
                                     .onDrag {
@@ -105,8 +110,13 @@ struct DataTableViewManagementView: View {
                 }
             }
         }
-        .sheet(item: $selectedView) { view in
-            EditTableViewView(table: table, view: view)
+        .sheet(isPresented: $showAddFilter) {
+            if let view = selectedViewForFilter {
+                AddFilterView(table: table) { filter in
+                    view.filters.append(filter)
+                    try? modelContext.save()
+                }
+            }
         }
     }
     
