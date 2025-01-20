@@ -12,6 +12,7 @@ struct DataTableDetailView: View {
     @State private var showViewManagement = false
     @State private var showAddSort = false
     @State private var sortOrders: [ViewSortOrder] = []
+    @State private var currentView: DataTableView?
 
     @Query(sort: [SortDescriptor(\DataRecord.createdAt)]) var records: [DataRecord]
 
@@ -25,6 +26,13 @@ struct DataTableDetailView: View {
         _records = Query(filter: #Predicate<DataRecord> { record in
             record.table?.id == tableId
         }, sort: [SortDescriptor(\DataRecord.createdAt)])
+        
+        // 初始化默认视图
+        if table.views.isEmpty {
+            let defaultView = DataTableView(name: "默认视图", sortIndex: 0)
+            table.views.append(defaultView)
+        }
+        _currentView = State(initialValue: table.views.first)
     }
     
     private var sortedAndFilteredRecords: [DataRecord] {
@@ -37,10 +45,10 @@ struct DataTableDetailView: View {
             }
         }
         
-        // 应用排序
-        if !sortOrders.isEmpty {
+        // 应用视图中的排序
+        if let view = currentView, !view.sortOrders.isEmpty {
             result = result.sorted { (record1: DataRecord, record2: DataRecord) -> Bool in
-                for sortOrder in sortOrders {
+                for sortOrder in view.sortOrders {
                     // 处理系统字段
                     switch sortOrder.fieldId {
                     case "creation_date":
@@ -61,7 +69,6 @@ struct DataTableDetailView: View {
                         }
                     }
                 }
-                // 如果所有排序字段都相等，保持原有顺序
                 return false
             }
         }
@@ -172,8 +179,8 @@ struct DataTableDetailView: View {
             DataTableViewManagementView(table: table)
         }
         .sheet(isPresented: $showAddSort) {
-            AddSortView(table: table) { newSort in
-                sortOrders.append(newSort)
+            if let currentView = currentView {
+                SortManagementView(table: table, currentView: currentView)
             }
         }
         .toolbar {

@@ -32,87 +32,115 @@ struct AddSortView: View {
             ZStack {
                 backgroundColor.ignoresSafeArea()
                 
-                List {
-                    // 字段选择部分
-                    Section("字段") {
-                        ForEach(table.fields) { field in
-                            HStack {
-                                Text(field.name)
-                                    .foregroundColor(mainColor)
-                                Spacer()
-                                if selectedFieldId == field.id.uuidString {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(accentColor)
+                VStack {
+                    List {
+                        // 字段选择部分
+                        Section("字段") {
+                            ForEach(table.fields) { field in
+                                HStack {
+                                    Text(field.name)
+                                        .foregroundColor(mainColor)
+                                    Spacer()
+                                    if selectedFieldId == field.id.uuidString {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(accentColor)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selectedFieldId = field.id.uuidString
                                 }
                             }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedFieldId = field.id.uuidString
-                            }
                         }
-                    }
-                    
-                    // 系统参数部分
-                    Section("系统参数") {
-                        ForEach(SystemField.allCases, id: \.self) { systemField in
-                            HStack {
-                                Text(systemField.name)
-                                    .foregroundColor(mainColor)
-                                Spacer()
-                                if selectedFieldId == systemField.rawValue {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(accentColor)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                selectedFieldId = systemField.rawValue
-                            }
-                        }
-                    }
-                    
-                    // 排序方向部分
-                    Section {
-                        HStack {
-                            Image(systemName: "arrow.up")
-                                .foregroundColor(accentColor)
-                            Button("升序") {
-                                ascending = true
-                            }
-                            .foregroundColor(mainColor)
-                            Spacer()
-                            if ascending {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(accentColor)
-                            }
-                        }
-                        .contentShape(Rectangle())
                         
-                        HStack {
-                            Image(systemName: "arrow.down")
-                                .foregroundColor(accentColor)
-                            Button("降序") {
-                                ascending = false
-                            }
-                            .foregroundColor(mainColor)
-                            Spacer()
-                            if !ascending {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(accentColor)
+                        // 系统参数部分
+                        Section("系统参数") {
+                            ForEach(SystemField.allCases, id: \.self) { systemField in
+                                HStack {
+                                    Text(systemField.name)
+                                        .foregroundColor(mainColor)
+                                    Spacer()
+                                    if selectedFieldId == systemField.rawValue {
+                                        Image(systemName: "checkmark")
+                                            .foregroundColor(accentColor)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selectedFieldId = systemField.rawValue
+                                }
                             }
                         }
-                        .contentShape(Rectangle())
+                        
+                        // 排序方向部分
+                        Section {
+                            HStack {
+                                Image(systemName: "arrow.up")
+                                    .foregroundColor(accentColor)
+                                Button("升序") {
+                                    ascending = true
+                                }
+                                .foregroundColor(mainColor)
+                                Spacer()
+                                if ascending {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(accentColor)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            
+                            HStack {
+                                Image(systemName: "arrow.down")
+                                    .foregroundColor(accentColor)
+                                Button("降序") {
+                                    ascending = false
+                                }
+                                .foregroundColor(mainColor)
+                                Spacer()
+                                if !ascending {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(accentColor)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        
+                        // 按值分组部分
+                        Section {
+                            Toggle("按值分组", isOn: $groupByValue)
+                                .tint(accentColor)
+                        }
                     }
+                    .scrollContentBackground(.hidden)
                     
-                    // 按值分组部分
-                    Section {
-                        Toggle("按值分组", isOn: $groupByValue)
-                            .tint(accentColor)
+                    // 添加排序按钮
+                    Button(action: {
+                        if let fieldId = selectedFieldId {
+                            let sort = ViewSortOrder(
+                                fieldId: fieldId,
+                                ascending: ascending,
+                                index: 0  // 这里可以根据需要设置正确的索引
+                            )
+                            onAdd(sort)
+                            dismiss()
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "plus.circle.fill")
+                            Text("添加排序")
+                        }
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(selectedFieldId == nil ? Color.gray : accentColor)
+                        .cornerRadius(8)
                     }
+                    .disabled(selectedFieldId == nil)
+                    .padding()
                 }
-                .scrollContentBackground(.hidden)
             }
-            .navigationTitle("排序方式")
+            .navigationTitle("添加排序")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -120,22 +148,6 @@ struct AddSortView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(accentColor)
                     }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("保存") {
-                        if let fieldId = selectedFieldId {
-                            let sort = ViewSortOrder(
-                                fieldId: fieldId,
-                                ascending: ascending,
-                                index: 0
-                            )
-                            onAdd(sort)
-                            dismiss()
-                        }
-                    }
-                    .disabled(selectedFieldId == nil)
-                    .foregroundColor(accentColor)
                 }
             }
         }
