@@ -27,16 +27,38 @@ struct DataTableDetailView: View {
             record.table?.id == tableId
         }, sort: [SortDescriptor(\DataRecord.createdAt)])
         
-        // 初始化默认视图
-        if table.views.isEmpty {
-            let defaultView = DataTableView(name: "默认视图", sortIndex: 0)
-            table.views.append(defaultView)
-        }
-        _currentView = State(initialValue: table.views.first)
+        // 不再创建默认视图
+        _currentView = State(initialValue: nil)
     }
     
     private var sortedAndFilteredRecords: [DataRecord] {
         var result = records
+        
+        // 应用视图过滤器
+        if let view = currentView {
+            result = result.filter { record in
+                view.filters.allSatisfy { filter in
+                    let fieldValue: String?
+                    
+                    // 处理系统字段
+                    switch filter.fieldId {
+                    case "creation_date":
+                        fieldValue = record.createdAt.formatted()
+                    case "modified_date":
+                        fieldValue = record.updatedAt.formatted()
+                    default:
+                        // 处理自定义字段
+                        if let fieldUUID = UUID(uuidString: filter.fieldId) {
+                            fieldValue = record.values[fieldUUID]
+                        } else {
+                            fieldValue = nil
+                        }
+                    }
+                    
+                    return filter.matches(value: fieldValue)
+                }
+            }
+        }
         
         // 应用搜索过滤
         if !searchText.isEmpty {
@@ -82,6 +104,55 @@ struct DataTableDetailView: View {
             
             ScrollView {
                 VStack(spacing: 20) {
+                    // 视图选择器，只在有视图时显示
+                    if !table.views.isEmpty {
+                        Menu {
+                            Button(action: {
+                                currentView = nil
+                            }) {
+                                HStack {
+                                    Text("显示全部")
+                                    if currentView == nil {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                            
+                            Divider()
+                            
+                            ForEach(table.views) { view in
+                                Button(action: {
+                                    currentView = view
+                                }) {
+                                    HStack {
+                                        Text(view.name)
+                                        if currentView?.id == view.id {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+                            }
+                            
+                            Divider()
+                            
+                            Button(action: { showViewManagement = true }) {
+                                Label("管理视图", systemImage: "gear")
+                            }
+                        } label: {
+                            HStack {
+                                Text(currentView?.name ?? "显示全部")
+                                    .foregroundColor(mainColor)
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .foregroundColor(.gray)
+                            }
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color.white)
+                            .cornerRadius(10)
+                        }
+                        .padding(.horizontal)
+                    }
+                    
                     // 基本信息卡片
                     VStack(alignment: .leading, spacing: 12) {
                         HStack(spacing: 8) {

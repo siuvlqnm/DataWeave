@@ -39,10 +39,12 @@ class ViewFilter {
         case notEquals = "不等于"
         case contains = "包含"
         case notContains = "不包含"
-        case greaterThan = "大于"
-        case lessThan = "小于"
+        case startsWith = "开头是"
+        case endsWith = "结尾是"
         case isEmpty = "为空"
         case isNotEmpty = "不为空"
+        case greaterThan = "大于"
+        case lessThan = "小于"
     }
 }
 
