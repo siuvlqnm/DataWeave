@@ -13,7 +13,7 @@ struct ColorFieldRow: View {
                     .frame(width: 24, height: 24)
             }
             
-            Text(value.isEmpty ? "选择颜色" : value)
+            Text(value.isEmpty ? "选择颜色" : "")
                 .foregroundColor(value.isEmpty ? .secondary : .primary)
             Spacer()
         }

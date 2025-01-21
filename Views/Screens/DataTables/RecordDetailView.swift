@@ -76,6 +76,14 @@ struct RecordDetailView: View {
                                     }
                                     .frame(height: 200)
                                     .cornerRadius(8)
+                                } else if field.type == .color {
+                                    Circle()
+                                        .fill(Color(hex: field.value))
+                                        .frame(width: 24, height: 24)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(8)
+                                        .background(Color.white.opacity(0.5))
+                                        .cornerRadius(6)
                                 } else {
                                     Text(field.value)
                                         .font(.system(size: 16))
