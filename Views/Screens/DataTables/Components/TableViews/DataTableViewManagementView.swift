@@ -13,6 +13,7 @@ struct DataTableViewManagementView: View {
     @State private var isEditing = false
     @State private var showAddFilter = false
     @State private var selectedViewForFilter: DataTableView?
+    @State private var selectedFilter: ViewFilter?
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
@@ -50,6 +51,7 @@ struct DataTableViewManagementView: View {
                                     ViewRow(
                                         view: view,
                                         isEditing: $isEditing,
+                                        selectedFilter: $selectedFilter,
                                         onTap: {
                                             selectedViewForFilter = view
                                             showAddFilter = true
@@ -112,8 +114,17 @@ struct DataTableViewManagementView: View {
         }
         .sheet(isPresented: $showAddFilter) {
             if let view = selectedViewForFilter {
-                AddFilterView(table: table) { filter in
-                    view.filters.append(filter)
+                AddFilterView(
+                    table: table,
+                    existingFilter: selectedFilter
+                ) { filter in
+                    if let existingFilter = selectedFilter,
+                       let index = view.filters.firstIndex(of: existingFilter) {
+                        view.filters[index] = filter
+                    } else {
+                        view.filters.append(filter)
+                    }
+                    view.name = filter.viewName
                     try? modelContext.save()
                 }
             }
@@ -146,6 +157,7 @@ struct DataTableViewManagementView: View {
 private struct ViewRow: View {
     let view: DataTableView
     @Binding var isEditing: Bool
+    @Binding var selectedFilter: ViewFilter?
     let onTap: () -> Void
     let onDelete: () -> Void
     
@@ -154,6 +166,11 @@ private struct ViewRow: View {
     var body: some View {
         Button(action: {
             if !isEditing {
+                if !view.filters.isEmpty {
+                    selectedFilter = view.filters[0]
+                } else {
+                    selectedFilter = nil
+                }
                 onTap()
             }
         }) {

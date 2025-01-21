@@ -26,12 +26,14 @@ class ViewFilter {
     var fieldId: String
     var operation: FilterOperation
     var value: String
+    var viewName: String
     
-    init(fieldId: String, operation: FilterOperation, value: String) {
+    init(fieldId: String, operation: FilterOperation, value: String, viewName: String = "新视图") {
         self.id = UUID().uuidString
         self.fieldId = fieldId
         self.operation = operation
         self.value = value
+        self.viewName = viewName
     }
     
     enum FilterOperation: String, Codable, CaseIterable {

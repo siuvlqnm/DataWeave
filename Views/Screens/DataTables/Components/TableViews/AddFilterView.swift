@@ -4,11 +4,13 @@ import SwiftData
 struct AddFilterView: View {
     @Environment(\.dismiss) private var dismiss
     let table: DataTable
+    let existingFilter: ViewFilter?
     let onAdd: (ViewFilter) -> Void
     
     @State private var selectedFieldId: String?
     @State private var selectedOperation: ViewFilter.FilterOperation = .equals
     @State private var filterValue = ""
+    @State private var viewName: String
     
     // 统一颜色定义
     private let mainColor = Color(hex: "1A202C")
@@ -28,6 +30,18 @@ struct AddFilterView: View {
         }
     }
     
+    init(table: DataTable, existingFilter: ViewFilter? = nil, onAdd: @escaping (ViewFilter) -> Void) {
+        self.table = table
+        self.existingFilter = existingFilter
+        self.onAdd = onAdd
+        
+        // 初始化状态，如果存在现有过滤器则使用其值
+        _selectedFieldId = State(initialValue: existingFilter?.fieldId)
+        _selectedOperation = State(initialValue: existingFilter?.operation ?? .equals)
+        _filterValue = State(initialValue: existingFilter?.value ?? "")
+        _viewName = State(initialValue: "新视图") // 设置默认名称
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -35,6 +49,13 @@ struct AddFilterView: View {
                 
                 VStack {
                     List {
+                        // 视图名称部分
+                        Section {
+                            TextField("视图名称", text: $viewName)
+                                // .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .foregroundColor(mainColor)
+                        }
+                        
                         // 字段选择部分
                         Section {
                             Menu {
@@ -46,6 +67,7 @@ struct AddFilterView: View {
                                             Text(field.name)
                                             if selectedFieldId == field.id.uuidString {
                                                 Image(systemName: "checkmark")
+                                                    .foregroundColor(accentColor)
                                             }
                                         }
                                     }
@@ -60,6 +82,7 @@ struct AddFilterView: View {
                                             Text(systemField.name)
                                             if selectedFieldId == systemField.rawValue {
                                                 Image(systemName: "checkmark")
+                                                    .foregroundColor(accentColor)
                                             }
                                         }
                                     }
@@ -72,8 +95,10 @@ struct AddFilterView: View {
                                     if let fieldId = selectedFieldId {
                                         if let field = table.fields.first(where: { $0.id.uuidString == fieldId }) {
                                             Text(field.name)
+                                                .foregroundColor(accentColor)
                                         } else if let systemField = SystemField(rawValue: fieldId) {
                                             Text(systemField.name)
+                                                .foregroundColor(accentColor)
                                         }
                                     }
                                     Image(systemName: "chevron.up.chevron.down")
@@ -94,6 +119,7 @@ struct AddFilterView: View {
                                                 Text(operation.rawValue)
                                                 if selectedOperation == operation {
                                                     Image(systemName: "checkmark")
+                                                        .foregroundColor(accentColor)
                                                 }
                                             }
                                         }
@@ -104,6 +130,7 @@ struct AddFilterView: View {
                                             .foregroundColor(mainColor)
                                         Spacer()
                                         Text(selectedOperation.rawValue)
+                                            .foregroundColor(accentColor)
                                         Image(systemName: "chevron.up.chevron.down")
                                             .foregroundColor(.gray)
                                     }
@@ -127,7 +154,8 @@ struct AddFilterView: View {
                             let filter = ViewFilter(
                                 fieldId: fieldId,
                                 operation: selectedOperation,
-                                value: filterValue
+                                value: filterValue,
+                                viewName: viewName // 添加视图名称
                             )
                             onAdd(filter)
                             dismiss()
@@ -158,20 +186,21 @@ struct AddFilterView: View {
                     }
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("应用") {
-                        if let fieldId = selectedFieldId {
-                            let filter = ViewFilter(
-                                fieldId: fieldId,
-                                operation: selectedOperation,
-                                value: filterValue
-                            )
-                            onAdd(filter)
-                            dismiss()
-                        }
-                    }
-                    .disabled(selectedFieldId == nil)
-                }
+                // ToolbarItem(placement: .navigationBarTrailing) {
+                //     Button("应用") {
+                //         if let fieldId = selectedFieldId {
+                //             let filter = ViewFilter(
+                //                 fieldId: fieldId,
+                //                 operation: selectedOperation,
+                //                 value: filterValue,
+                //                 viewName: viewName // 添加视图名称
+                //             )
+                //             onAdd(filter)
+                //             dismiss()
+                //         }
+                //     }
+                //     .disabled(selectedFieldId == nil)
+                // }
             }
         }
     }
