@@ -13,6 +13,7 @@ struct DataTableDetailView: View {
     @State private var showAddSort = false
     @State private var sortOrders: [ViewSortOrder] = []
     @State private var currentView: DataTableView?
+    @State private var showExplorer = false
 
     @Query(sort: [SortDescriptor(\DataRecord.createdAt)]) var records: [DataRecord]
 
@@ -254,6 +255,9 @@ struct DataTableDetailView: View {
                 SortManagementView(table: table, currentView: currentView)
             }
         }
+        .sheet(isPresented: $showExplorer) {
+            ExplorerView(table: table)
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Menu {
@@ -267,6 +271,11 @@ struct DataTableDetailView: View {
                     
                     Button(action: { showViewManagement = true }) {
                         Label("视图", systemImage: "eye")
+                    }
+
+                    // 添加探索视图
+                    Button(action: { showExplorer = true }) {
+                        Label("资源管理器", systemImage: "folder")
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
