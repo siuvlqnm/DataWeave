@@ -1,8 +1,11 @@
 import SwiftUI
+import SwiftData
 
 struct EditExplorerConfigView: View {
     @Environment(\.dismiss) private var dismiss
-    let configManager: ExplorerConfigManager
+    @Environment(\.modelContext) private var modelContext
+    
+    let table: DataTable
     let config: ExplorerView
     
     @State private var configName: String
@@ -13,9 +16,10 @@ struct EditExplorerConfigView: View {
     
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
+    private let backgroundColor = Color(hex: "FAF0E6")
     
-    init(configManager: ExplorerConfigManager, config: ExplorerView) {
-        self.configManager = configManager
+    init(table: DataTable, config: ExplorerView) {
+        self.table = table
         self.config = config
         
         // 初始化状态
@@ -59,7 +63,7 @@ struct EditExplorerConfigView: View {
                     }
                     
                     Section("显示字段") {
-                        let fields = configManager.table.fields.sorted { $0.sortIndex < $1.sortIndex }
+                        let fields = table.fields.sorted { $0.sortIndex < $1.sortIndex }
                         ForEach(fields) { field in
                             Toggle(isOn: Binding(
                                 get: { selectedFields.contains(field.id.uuidString) },
@@ -101,14 +105,14 @@ struct EditExplorerConfigView: View {
     }
     
     private func saveChanges() {
-        // 更新配置
         config.name = configName
         config.viewMode = selectedViewMode.rawValue
         config.columnsCount = columnsCount
         config.cardSize = cardSize
         config.displayFields = Array(selectedFields)
+        config.updatedAt = Date()
         
-        configManager.saveCurrentConfig()
+        try? modelContext.save()
         dismiss()
     }
 } 

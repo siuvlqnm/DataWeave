@@ -11,6 +11,7 @@ class DataTable {
     var updatedAt: Date
     var records: [DataRecord] // 反向关联
     @Relationship(deleteRule: .cascade) var views: [DataTableView]
+    @Relationship(deleteRule: .cascade) var explorers: [ExplorerView] = []
 
     init(name: String, description: String = "") {
         self.id = UUID()

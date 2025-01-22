@@ -3,9 +3,13 @@ import SwiftData
 
 struct AddExplorerView: View {
     @Environment(\.dismiss) private var dismiss
-    let configManager: ExplorerConfigManager
+    @Environment(\.modelContext) private var modelContext
     
-    @State private var configName = ""
+    let table: DataTable
+    let existingConfig: ExplorerView?
+    let onAdd: (ExplorerView) -> Void
+    
+    @State private var configName: String
     @State private var selectedViewMode: ViewMode = .grid
     @State private var columnsCount = 3
     @State private var cardSize: Double = 200
@@ -14,6 +18,21 @@ struct AddExplorerView: View {
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
     private let backgroundColor = Color(hex: "FAF0E6")
+    
+    init(table: DataTable, existingConfig: ExplorerView? = nil, onAdd: @escaping (ExplorerView) -> Void) {
+        self.table = table
+        self.existingConfig = existingConfig
+        self.onAdd = onAdd
+        
+        // 初始化状态
+        _configName = State(initialValue: existingConfig?.name ?? "")
+        if let config = existingConfig {
+            _selectedViewMode = State(initialValue: ViewMode(rawValue: config.viewMode) ?? .grid)
+            _columnsCount = State(initialValue: config.columnsCount)
+            _cardSize = State(initialValue: config.cardSize)
+            _selectedFields = State(initialValue: Set(config.displayFields))
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -58,7 +77,7 @@ struct AddExplorerView: View {
                             }
                             
                             Section("显示字段") {
-                                let fields = configManager.table.fields.sorted { $0.sortIndex < $1.sortIndex }
+                                let fields = table.fields.sorted { $0.sortIndex < $1.sortIndex }
                                 ForEach(fields) { field in
                                     Toggle(isOn: Binding(
                                         get: { selectedFields.contains(field.id.uuidString) },
@@ -114,22 +133,23 @@ struct AddExplorerView: View {
     }
     
     private func createConfig() {
-        configManager.createNewConfig(
+        let config = ExplorerView(
+            tableId: table.id.uuidString,
             name: configName,
             viewMode: selectedViewMode.rawValue,
             columnsCount: columnsCount,
-            cardSize: cardSize,
-            displayFields: Array(selectedFields)
+            cardSize: cardSize
         )
+        config.displayFields = Array(selectedFields)
+        
+        onAdd(config)
         dismiss()
     }
 }
 
 #Preview {
     AddExplorerView(
-        configManager: ExplorerConfigManager(
-            modelContext: ModelContext(try! ModelContainer(for: DataTable.self)),
-            table: DataTable(name: "测试表")
-        )
+        table: DataTable(name: "测试表"),
+        onAdd: { _ in }
     )
 } 

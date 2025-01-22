@@ -1,3 +1,6 @@
+import SwiftUI
+import SwiftData
+
 extension ViewFilter {
     // enum FilterOperation: String, CaseIterable {
     //     case equals = "等于"

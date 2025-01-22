@@ -27,6 +27,8 @@ class ExplorerView {
     var sortAscending: Bool
     var filterRules: [FilterRule]
     
+    var sortIndex: Int = 0
+    
     init(
         tableId: String,
         name: String = "默认视图",
