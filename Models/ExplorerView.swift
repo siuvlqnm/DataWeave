@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 
 @Model
-class ExplorerViewConfig {
+class ExplorerView {
     // 基本信息
     var id: String
     var tableId: String

@@ -5,7 +5,7 @@ struct GridExplorerView: View {
     let records: [DataRecord]
     let fields: [DataField]
     @Binding var selectedRecords: Set<UUID>
-    let config: ExplorerViewConfig
+    let config: ExplorerView
     
     // 列宽调整状态
     @State private var columnWidths: [UUID: CGFloat] = [:]
@@ -229,7 +229,7 @@ private struct GridCell: View {
         records: [record1, record2],
         fields: table.fields,
         selectedRecords: .constant([]),
-        config: ExplorerViewConfig(tableId: UUID().uuidString)
+        config: ExplorerView(tableId: UUID().uuidString)
     )
     .padding()
 } 

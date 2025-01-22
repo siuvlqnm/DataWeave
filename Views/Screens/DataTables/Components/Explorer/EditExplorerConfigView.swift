@@ -3,7 +3,7 @@ import SwiftUI
 struct EditExplorerConfigView: View {
     @Environment(\.dismiss) private var dismiss
     let configManager: ExplorerConfigManager
-    let config: ExplorerViewConfig
+    let config: ExplorerView
     
     @State private var configName: String
     @State private var selectedViewMode: ViewMode
@@ -14,7 +14,7 @@ struct EditExplorerConfigView: View {
     private let mainColor = Color(hex: "1A202C")
     private let accentColor = Color(hex: "A020F0")
     
-    init(configManager: ExplorerConfigManager, config: ExplorerViewConfig) {
+    init(configManager: ExplorerConfigManager, config: ExplorerView) {
         self.configManager = configManager
         self.config = config
         

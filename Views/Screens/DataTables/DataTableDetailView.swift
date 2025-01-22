@@ -256,7 +256,7 @@ struct DataTableDetailView: View {
             }
         }
         .sheet(isPresented: $showExplorer) {
-            ExplorerView(table: table)
+            ExplorerManagementView(table: table)
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {

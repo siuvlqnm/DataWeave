@@ -6,8 +6,8 @@ class ExplorerConfigManager {
     private var modelContext: ModelContext
     private(set) var table: DataTable
     
-    @ObservationIgnored private(set) var currentConfig: ExplorerViewConfig
-    @ObservationIgnored private(set) var availableConfigs: [ExplorerViewConfig] = []
+    @ObservationIgnored private(set) var currentConfig: ExplorerView
+    @ObservationIgnored private(set) var availableConfigs: [ExplorerView] = []
     
     init(modelContext: ModelContext, table: DataTable) {
         self.modelContext = modelContext
@@ -17,7 +17,7 @@ class ExplorerConfigManager {
         let tableIdString = table.id.uuidString
         
         // 加载该表的所有视图配置
-        let descriptor = FetchDescriptor<ExplorerViewConfig>(
+        let descriptor = FetchDescriptor<ExplorerView>(
             sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
         )
         
@@ -29,7 +29,7 @@ class ExplorerConfigManager {
             
             // 如果没有配置，创建默认配置
             if availableConfigs.isEmpty {
-                let defaultConfig = ExplorerViewConfig(tableId: tableIdString)
+                let defaultConfig = ExplorerView(tableId: tableIdString)
                 modelContext.insert(defaultConfig)
                 currentConfig = defaultConfig
                 availableConfigs = [defaultConfig]
@@ -39,7 +39,7 @@ class ExplorerConfigManager {
         } catch {
             print("Error fetching explorer configs: \(error)")
             // 创建默认配置
-            let defaultConfig = ExplorerViewConfig(tableId: tableIdString)
+            let defaultConfig = ExplorerView(tableId: tableIdString)
             modelContext.insert(defaultConfig)
             currentConfig = defaultConfig
             availableConfigs = [defaultConfig]
@@ -60,7 +60,7 @@ class ExplorerConfigManager {
         cardSize: Double = 200,
         displayFields: [String] = []
     ) {
-        let newConfig = ExplorerViewConfig(
+        let newConfig = ExplorerView(
             tableId: table.id.uuidString,
             name: name,
             viewMode: viewMode,
@@ -75,7 +75,7 @@ class ExplorerConfigManager {
     }
     
     // 删除配置
-    func deleteConfig(_ config: ExplorerViewConfig) {
+    func deleteConfig(_ config: ExplorerView) {
         guard availableConfigs.count > 1 else { return }
         modelContext.delete(config)
         availableConfigs.removeAll { $0.id == config.id }

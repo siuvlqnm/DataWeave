@@ -5,7 +5,7 @@ struct CardExplorerView: View {
     let records: [DataRecord]
     let fields: [DataField]
     @Binding var selectedRecords: Set<UUID>
-    let config: ExplorerViewConfig
+    let config: ExplorerView
     
     // 布局配置
     @State private var columns = Array(repeating: GridItem(.flexible(), spacing: 16), count: 3)
@@ -213,7 +213,7 @@ private struct FieldValueView: View {
         records: [record1, record2],
         fields: table.fields,
         selectedRecords: .constant([]),
-        config: ExplorerViewConfig(tableId: UUID().uuidString)
+        config: ExplorerView(tableId: UUID().uuidString)
     )
     .padding()
 } 
